@@ -144,12 +144,18 @@ function renderHome() {
     }) || programas[2] || programas[0];
 
     if (activeProg) {
-        document.getElementById('now-host-img').src = activeProg.imagen;
-        document.getElementById('now-program-title').innerText = activeProg.nombre;
-        document.getElementById('now-host-name').innerText = `Locutor: ${activeProg.locutor}`;
-        document.getElementById('now-schedule-time').innerText = `${activeProg.hora_inicio} - ${activeProg.hora_fin}`;
+        const hostImg = document.getElementById('now-host-img');
+        const progTitle = document.getElementById('now-program-title');
+        const hostName = document.getElementById('now-host-name');
+        const scheduleTime = document.getElementById('now-schedule-time');
         
-        document.getElementById('radio-now-program').innerText = activeProg.nombre;
+        if (hostImg) hostImg.src = activeProg.imagen;
+        if (progTitle) progTitle.innerText = activeProg.nombre;
+        if (hostName) hostName.innerText = `Locutor: ${activeProg.locutor}`;
+        if (scheduleTime) scheduleTime.innerText = `${activeProg.hora_inicio} - ${activeProg.hora_fin}`;
+        
+        const radioNowProg = document.getElementById('radio-now-program');
+        if (radioNowProg) radioNowProg.innerText = activeProg.nombre;
     }
 
     // Enlaces sociales

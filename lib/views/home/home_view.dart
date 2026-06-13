@@ -421,69 +421,9 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                       ],
 
                       // ==========================================
-                      // COMÚN: AHORA EN EL AIRE Y REDES (Fácil lectura)
+                      // COMÚN: REDES (Fácil lectura)
                       // ==========================================
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'PROGRAMACIÓN ACTUAL',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.5),
-                            ),
-                            const SizedBox(height: 8),
-                            Card(
-                              child: ListTile(
-                                leading: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  child: SizedBox(
-                                    width: 50,
-                                    height: 50,
-                                    child: programaAlAire != null && programaAlAire.imagen.isNotEmpty
-                                        ? CachedNetworkImage(
-                                            imageUrl: programaAlAire.imagen,
-                                            fit: BoxFit.cover,
-                                            placeholder: (context, url) => Container(
-                                              color: AppTheme.gold.withOpacity(0.1),
-                                              child: const SpinKitRing(color: AppTheme.gold, size: 16, borderWidth: 1.5),
-                                            ),
-                                            errorWidget: (context, url, error) => Container(
-                                              color: Colors.grey.shade300,
-                                              child: const Icon(Icons.person, color: Colors.grey),
-                                            ),
-                                          )
-                                        : Container(
-                                            color: AppTheme.gold.withOpacity(0.2),
-                                            child: const Icon(Icons.radio, color: AppTheme.gold),
-                                          ),
-                                  ),
-                                ),
-                                title: Text(
-                                  programaAlAire?.nombre ?? 'Música Continuada',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                                ),
-                                subtitle: Text(
-                                  'Locución: ${programaAlAire?.locutor ?? 'DJ Máxima'}',
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                                trailing: Text(
-                                  programaAlAire?.formattedSchedule ?? '24 Horas',
-                                  style: const TextStyle(color: AppTheme.gold, fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            const Text(
-                              'PROGRAMACIÓN DE LA SEMANA',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.5),
-                            ),
-                            const SizedBox(height: 8),
-                            const _WeeklyScheduleWidget(),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 12),
 
                       // Redes Sociales
                       Padding(
