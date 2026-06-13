@@ -48,6 +48,7 @@ let activeAdminSection = 'programs';
 let editingItemId = null;
 let isTvPlaying = false;
 let _autoplayListenersBound = false; // Evitar añadir event listeners múltiples veces
+let _streamHealthTimer = null;
 
 // HTML Elements
 const audioElement = document.getElementById('app-audio-element');
@@ -69,18 +70,51 @@ document.addEventListener('DOMContentLoaded', function() {
     setupListeners();
     initWeeklySchedule();
     initVideoControls();
-    // NO intentar autoplay aquí — el overlay pedirá interacción al usuario
-    // y activateAudio() se llamará con un gesto real del usuario
+    // Intentar reproducir la radio automáticamente al cargar
+    autoplayOnLoad();
 });
 
-// ACTIVACIÓN DE AUDIO
-// REGLA CRÍTICA: audioElement.play() DEBE llamarse SINCRÓNICAMENTE
-// dentro del handler del gesto del usuario (onclick/touchstart).
-// Si se llama dentro de un .then() o setTimeout(), Chrome puede denegar el permiso.
-let _streamHealthTimer = null;
+// AUTOPLAY AL CARGAR — intenta muted primero (Chrome lo permite), luego desmutea
+function autoplayOnLoad() {
+    if (!_autoplayListenersBound) {
+        bindAudioStateEvents();
+        _autoplayListenersBound = true;
+    }
+    currentPlayingType = 'radio';
+    audioElement.src = config.stream_radio;
+    audioElement.volume = 1.0;
+    audioElement.muted = true; // Muted primero para evitar bloqueo de autoplay
 
+    const playPromise = audioElement.play();
+    if (playPromise !== undefined) {
+        playPromise
+            .then(() => {
+                // Reproduciendo con mute — desmutear inmediatamente
+                audioElement.muted = false;
+                if (volumeSlider) volumeSlider.value = 100;
+                isAudioPlaying = true;
+                updateAudioUI();
+                startStreamHealthCheck();
+                // Asegurarse de que el banner esté oculto
+                const banner = document.getElementById('autoplay-blocked-banner');
+                if (banner) banner.style.display = 'none';
+            })
+            .catch(err => {
+                console.warn('Autoplay bloqueado por el navegador:', err.message);
+                // Mostrar banner discreto para que el usuario lo active
+                isAudioPlaying = false;
+                currentPlayingType = 'none';
+                updateAudioUI();
+                const banner = document.getElementById('autoplay-blocked-banner');
+                if (banner) banner.style.display = 'block';
+            });
+    }
+}
+
+
+// ACTIVACIÓN MANUAL — llamada cuando el usuario toca el banner de autoplay bloqueado
 function activateAudio() {
-    const overlay = document.getElementById('audio-activation-overlay');
+    const banner = document.getElementById('autoplay-blocked-banner');
 
     // Bind eventos de estado una sola vez
     if (!_autoplayListenersBound) {
@@ -88,26 +122,17 @@ function activateAudio() {
         _autoplayListenersBound = true;
     }
 
-    // Ocultar overlay
-    if (overlay) {
-        overlay.style.transition = 'opacity 0.4s ease';
-        overlay.style.opacity = '0';
-        setTimeout(() => overlay.remove(), 400);
-    }
+    // Ocultar banner
+    if (banner) banner.style.display = 'none';
 
-    // ─────────────────────────────────────────────────────────────────
-    // TODO LO SIGUIENTE ES SÍNCRONO — dentro del gesto del usuario
-    // No usar .then(), await, ni setTimeout antes del .play()
-    // ─────────────────────────────────────────────────────────────────
+    // play() SÍNCRONO dentro del gesto del usuario — Chrome lo acepta
     currentPlayingType = 'radio';
     audioElement.volume = 1.0;
     audioElement.muted = false;
-    volumeSlider.value = 100;
-    audioElement.src = config.stream_radio; // URL limpia, sin parámetros
-    
-    // play() SÍNCRONO — Chrome acepta esto como gesto del usuario
-    const playPromise = audioElement.play();
+    if (volumeSlider) volumeSlider.value = 100;
+    audioElement.src = config.stream_radio;
 
+    const playPromise = audioElement.play();
     if (playPromise !== undefined) {
         playPromise
             .then(() => {
@@ -116,14 +141,14 @@ function activateAudio() {
                 startStreamHealthCheck();
             })
             .catch(err => {
-                console.error("activateAudio play() fallido:", err);
-                // Si falla, mostrar botón de reintento
+                console.error('activateAudio play() fallido:', err);
                 isAudioPlaying = false;
                 currentPlayingType = 'none';
                 updateAudioUI();
             });
     }
 }
+
 
 // Función para iniciar/reiniciar el stream de radio (puede ser async — ya tenemos permiso)
 function startRadioStream() {

@@ -15,53 +15,24 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="light-mode">
-    <!-- AUDIO ACTIVATION OVERLAY (solución al bloqueo de autoplay del navegador) -->
-    <div id="audio-activation-overlay" style="
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999;
-        background: linear-gradient(135deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 28px; cursor: pointer; user-select: none;
+    <!-- AUTOPLAY BLOCKED BANNER — solo visible si el navegador bloquea el autoplay -->
+    <div id="autoplay-blocked-banner" style="
+        display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+        z-index: 9999; background: linear-gradient(135deg, #D4A742, #f0c060);
+        color: #1a0a00; font-family: 'Outfit', sans-serif; font-size: 15px;
+        font-weight: 700; letter-spacing: 1px; padding: 14px 32px;
+        border-radius: 50px; box-shadow: 0 4px 30px rgba(212,167,66,0.6);
+        cursor: pointer; user-select: none; white-space: nowrap;
+        animation: pulse-btn 1.8s ease-in-out infinite;
     " onclick="activateAudio()">
-        <!-- Logo -->
-        <img src="logo_dark.png" alt="La Máxima 88.9 FM" style="height: 80px; object-fit: contain; filter: drop-shadow(0 0 20px rgba(212,167,66,0.5));">
-        
-        <!-- Animated radio waves -->
-        <div style="display: flex; gap: 5px; align-items: center; height: 48px;">
-            <span style="display:block; width:5px; border-radius:4px; background:var(--gold,#D4A742); animation: wave-anim 1.1s ease-in-out infinite; height: 16px; animation-delay: 0s;"></span>
-            <span style="display:block; width:5px; border-radius:4px; background:var(--gold,#D4A742); animation: wave-anim 1.1s ease-in-out infinite; height: 30px; animation-delay: 0.15s;"></span>
-            <span style="display:block; width:5px; border-radius:4px; background:var(--gold,#D4A742); animation: wave-anim 1.1s ease-in-out infinite; height: 46px; animation-delay: 0.3s;"></span>
-            <span style="display:block; width:5px; border-radius:4px; background:var(--gold,#D4A742); animation: wave-anim 1.1s ease-in-out infinite; height: 30px; animation-delay: 0.45s;"></span>
-            <span style="display:block; width:5px; border-radius:4px; background:var(--gold,#D4A742); animation: wave-anim 1.1s ease-in-out infinite; height: 16px; animation-delay: 0.6s;"></span>
-        </div>
-        <style>
-            @keyframes wave-anim {
-                0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
-                50%       { transform: scaleY(1.0); opacity: 1.0; }
-            }
-        </style>
-
-        <!-- Call to action button -->
-        <div style="
-            background: linear-gradient(135deg, #D4A742, #f0c060);
-            color: #1a0a00; font-family: 'Outfit', sans-serif; font-size: 18px;
-            font-weight: 700; letter-spacing: 1.5px; padding: 18px 48px;
-            border-radius: 50px; box-shadow: 0 0 40px rgba(212,167,66,0.5);
-            animation: pulse-btn 1.8s ease-in-out infinite;
-            display: flex; align-items: center; gap: 12px;
-        ">
-            <i class="fa-solid fa-play"></i> TOCAR PARA ESCUCHAR
-        </div>
-        <style>
-            @keyframes pulse-btn {
-                0%, 100% { transform: scale(1);    box-shadow: 0 0 30px rgba(212,167,66,0.4); }
-                50%       { transform: scale(1.05); box-shadow: 0 0 60px rgba(212,167,66,0.7); }
-            }
-        </style>
-
-        <p style="color: rgba(255,255,255,0.5); font-size: 12px; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px; margin: 0;">
-            La Máxima 88.9 FM · Radio en Vivo
-        </p>
+        <i class="fa-solid fa-play"></i> TOCA PARA ACTIVAR EL AUDIO
     </div>
+    <style>
+        @keyframes pulse-btn {
+            0%, 100% { transform: translateX(-50%) scale(1);    box-shadow: 0 4px 30px rgba(212,167,66,0.4); }
+            50%       { transform: translateX(-50%) scale(1.05); box-shadow: 0 4px 50px rgba(212,167,66,0.7); }
+        }
+    </style>
 
     <div class="app-container">
         <!-- HEADER -->
