@@ -1252,3 +1252,54 @@ hr {
     color: var(--gold);
     white-space: nowrap;
 }
+
+/* CUSTOM VIDEO CONTROLS */
+.video-controls {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 70%, transparent 100%);
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    gap: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 3;
+}
+
+.tv-player-container-static:hover .video-controls {
+    opacity: 1;
+}
+
+.ctrl-btn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+    height: 28px;
+    transition: color 0.2s;
+}
+
+.ctrl-btn:hover {
+    color: var(--gold);
+}
+
+.video-volume-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.video-volume-container input[type="range"] {
+    width: 65px;
+    accent-color: var(--gold);
+    height: 4px;
+    cursor: pointer;
+}
