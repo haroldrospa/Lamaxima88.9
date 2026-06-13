@@ -1107,4 +1107,27 @@ function initVideoControls() {
     video.volume = 1.0;
     video.muted = false;
     updateVolumeUI();
+
+    // Lógica para mostrar controles en dispositivos móviles al tocar el video
+    const tvContainer = document.querySelector('.tv-player-container-static');
+    let controlsTimeout = null;
+
+    if (tvContainer) {
+        tvContainer.addEventListener('click', (e) => {
+            // Si el click fue en un botón de los controles, no alternar la visibilidad de los controles
+            if (e.target.closest('#video-controls')) {
+                return;
+            }
+            
+            tvContainer.classList.toggle('show-controls');
+            
+            // Si se muestran, programar su ocultación automática tras 3.5 segundos
+            if (tvContainer.classList.contains('show-controls')) {
+                clearTimeout(controlsTimeout);
+                controlsTimeout = setTimeout(() => {
+                    tvContainer.classList.remove('show-controls');
+                }, 3500);
+            }
+        });
+    }
 }
