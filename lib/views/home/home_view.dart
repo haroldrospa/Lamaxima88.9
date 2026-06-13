@@ -62,11 +62,17 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     if (urlString.isEmpty) return;
     final url = Uri.parse(urlString);
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
+      final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
       }
     } catch (e) {
-      print('No se pudo abrir la URL: $urlString');
+      print('No se pudo abrir la URL externamente, intentando por defecto: $e');
+      try {
+        await launchUrl(url, mode: LaunchMode.platformDefault);
+      } catch (err) {
+        print('Error abriendo URL: $err');
+      }
     }
   }
 

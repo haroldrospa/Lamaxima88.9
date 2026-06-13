@@ -4,7 +4,7 @@ let config = {
     stream_tv: "https://streaming.lamaximafm.com:2020/hls/lamaximatv/lamaximatv.m3u8", // Streaming HLS de prueba
     facebook: "https://www.facebook.com/share/18qKUQ9LT2/?mibextid=wwXIfr",
     instagram: "https://www.instagram.com/lamaxima88.9?igsh=MXRtZWlwampkdHFsYw==",
-    youtube: "https://www.youtube.com/@lamaxima88",
+    youtube: "https://youtube.com/@lamaxima88?si=SzovcRt5QUwOi3ux",
     tiktok: "https://www.tiktok.com/@lamaxima889fm?_r=1&_t=ZS-97AO2ZUs2FN"
 };
 
@@ -158,11 +158,14 @@ function renderHome() {
     }
 
     // Enlaces sociales
-    document.getElementById('social-instagram').href = config.instagram;
-    document.getElementById('social-facebook').href = config.facebook;
-    document.getElementById('social-twitter').href = config.twitter;
-    document.getElementById('social-tiktok').href = config.tiktok;
-    document.getElementById('social-youtube').href = config.youtube;
+    const ig = document.getElementById('social-instagram');
+    if (ig) ig.href = config.instagram || '#';
+    const fb = document.getElementById('social-facebook');
+    if (fb) fb.href = config.facebook || '#';
+    const tt = document.getElementById('social-tiktok');
+    if (tt) tt.href = config.tiktok || '#';
+    const yt = document.getElementById('social-youtube');
+    if (yt) yt.href = config.youtube || '#';
 }
 
 // FORMAT HELPER
@@ -490,13 +493,18 @@ function renderAdminLists() {
             container.appendChild(createAdminRow(`${item.nombre} (${item.hora_inicio})`, item.id, () => openAdminForm('programs', item)));
         });
     } else if (activeAdminSection === 'config') {
-        document.getElementById('cfg-radio').value = config.stream_radio;
-        document.getElementById('cfg-tv').value = config.stream_tv;
-        document.getElementById('cfg-facebook').value = config.facebook;
-        document.getElementById('cfg-instagram').value = config.instagram;
-        document.getElementById('cfg-twitter').value = config.twitter;
-        document.getElementById('cfg-tiktok').value = config.tiktok;
-        document.getElementById('cfg-youtube').value = config.youtube;
+        const cfgRadio = document.getElementById('cfg-radio');
+        if (cfgRadio) cfgRadio.value = config.stream_radio || '';
+        const cfgTv = document.getElementById('cfg-tv');
+        if (cfgTv) cfgTv.value = config.stream_tv || '';
+        const cfgFacebook = document.getElementById('cfg-facebook');
+        if (cfgFacebook) cfgFacebook.value = config.facebook || '';
+        const cfgInstagram = document.getElementById('cfg-instagram');
+        if (cfgInstagram) cfgInstagram.value = config.instagram || '';
+        const cfgTiktok = document.getElementById('cfg-tiktok');
+        if (cfgTiktok) cfgTiktok.value = config.tiktok || '';
+        const cfgYoutube = document.getElementById('cfg-youtube');
+        if (cfgYoutube) cfgYoutube.value = config.youtube || '';
     }
 }
 
@@ -578,13 +586,18 @@ function deleteAdminItem(id) {
 
 function handleConfigSave(e) {
     e.preventDefault();
-    config.stream_radio = document.getElementById('cfg-radio').value;
-    config.stream_tv = document.getElementById('cfg-tv').value;
-    config.facebook = document.getElementById('cfg-facebook').value;
-    config.instagram = document.getElementById('cfg-instagram').value;
-    config.twitter = document.getElementById('cfg-twitter').value;
-    config.tiktok = document.getElementById('cfg-tiktok').value;
-    config.youtube = document.getElementById('cfg-youtube').value;
+    const cfgRadio = document.getElementById('cfg-radio');
+    if (cfgRadio) config.stream_radio = cfgRadio.value;
+    const cfgTv = document.getElementById('cfg-tv');
+    if (cfgTv) config.stream_tv = cfgTv.value;
+    const cfgFacebook = document.getElementById('cfg-facebook');
+    if (cfgFacebook) config.facebook = cfgFacebook.value;
+    const cfgInstagram = document.getElementById('cfg-instagram');
+    if (cfgInstagram) config.instagram = cfgInstagram.value;
+    const cfgTiktok = document.getElementById('cfg-tiktok');
+    if (cfgTiktok) config.tiktok = cfgTiktok.value;
+    const cfgYoutube = document.getElementById('cfg-youtube');
+    if (cfgYoutube) config.youtube = cfgYoutube.value;
     
     alert('Configuración de enlaces actualizada correctamente.');
     renderAllViews();
