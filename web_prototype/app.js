@@ -609,10 +609,13 @@ function updateAudioUI() {
     }
 
     // 2. Mini Player (Bottom Float)
+    const appContainer = document.querySelector('.app-container');
     if (currentPlayingType === 'none') {
         miniPlayer.classList.add('hidden');
+        if (appContainer) appContainer.classList.remove('has-mini-player');
     } else {
         miniPlayer.classList.remove('hidden');
+        if (appContainer) appContainer.classList.add('has-mini-player');
         
         const thumb = document.getElementById('mini-player-thumb');
         const title = document.getElementById('mini-player-title');

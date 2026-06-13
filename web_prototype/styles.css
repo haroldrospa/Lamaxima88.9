@@ -123,6 +123,7 @@ body {
     flex: 1;
     overflow-y: auto;
     position: relative;
+    -webkit-overflow-scrolling: touch; /* Momentum scrolling on iOS Safari */
 }
 
 .app-body::-webkit-scrollbar {
@@ -139,6 +140,11 @@ body {
     display: none;
     padding: 16px 16px 90px 16px;
     min-height: 100%;
+}
+
+/* Espacio extra al fondo cuando el mini-player está activo */
+.has-mini-player .app-view {
+    padding-bottom: 150px;
 }
 
 .app-view.active {
