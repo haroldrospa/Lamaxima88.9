@@ -227,14 +227,25 @@ function switchHomeTab(isRadio) {
 // PLAY AUDIO / STREAMING (RADIO)
 function toggleLiveRadio() {
     if (currentPlayingType === 'radio') {
-        togglePlayState();
+        if (isAudioPlaying) {
+            audioElement.pause();
+            audioElement.src = ''; // Unload stream to avoid buffering outdated chunks
+            isAudioPlaying = false;
+        } else {
+            audioElement.src = config.stream_radio;
+            audioElement.load(); // Request fresh buffer
+            audioElement.play().catch(e => console.log("Play failed: ", e));
+            isAudioPlaying = true;
+        }
+        updateAudioUI();
     } else {
         stopAudioPlayback();
         currentPlayingType = 'radio';
         
         audioElement.src = config.stream_radio;
         audioElement.volume = volumeSlider.value / 100;
-        audioElement.play();
+        audioElement.load();
+        audioElement.play().catch(e => console.log("Play failed: ", e));
         
         isAudioPlaying = true;
         updateAudioUI();
@@ -244,9 +255,12 @@ function toggleLiveRadio() {
 function togglePlayState() {
     if (isAudioPlaying) {
         audioElement.pause();
+        audioElement.src = ''; // Unload stream to prevent latency lag on resume
         isAudioPlaying = false;
     } else {
-        audioElement.play();
+        audioElement.src = config.stream_radio;
+        audioElement.load(); // Force fresh fetch
+        audioElement.play().catch(e => console.log("Play failed: ", e));
         isAudioPlaying = true;
     }
     updateAudioUI();
@@ -261,18 +275,35 @@ function stopAudioPlayback() {
 }
 
 // PLAY VIDEO STREAMING (TV)
+let hlsInstance = null;
+
 function playLiveTv() {
     isTvPlaying = true;
     if (Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(config.stream_tv);
-        hls.attachMedia(videoElement);
-        hls.on(Hls.Events.MANIFEST_PARSED, function() {
-            videoElement.play();
-        });
+        if (!hlsInstance) {
+            hlsInstance = new Hls({
+                enableWorker: true,
+                lowLatencyMode: true,
+                backBufferLength: 0,
+                maxBufferSize: 0,
+                maxBufferLength: 1.5,
+                maxMaxBufferLength: 3,
+                liveSyncDurationCount: 1.5
+            });
+            hlsInstance.attachMedia(videoElement);
+            hlsInstance.on(Hls.Events.MEDIA_ATTACHED, function () {
+                hlsInstance.loadSource(config.stream_tv);
+            });
+            hlsInstance.on(Hls.Events.MANIFEST_PARSED, function () {
+                videoElement.play().catch(e => console.log("Play failed: ", e));
+            });
+        } else {
+            hlsInstance.loadSource(config.stream_tv);
+            videoElement.play().catch(e => console.log("Play failed: ", e));
+        }
     } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
         videoElement.src = config.stream_tv;
-        videoElement.play();
+        videoElement.play().catch(e => console.log("Play failed: ", e));
     }
 }
 
@@ -280,6 +311,9 @@ function pauseLiveTv() {
     if (isTvPlaying) {
         videoElement.pause();
         isTvPlaying = false;
+        if (hlsInstance) {
+            hlsInstance.stopLoad();
+        }
     }
 }
 
