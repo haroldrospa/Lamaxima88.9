@@ -48,6 +48,7 @@ let activeAdminSection = 'programs';
 let editingItemId = null;
 let isTvPlaying = false;
 let _autoplayListenersBound = false; // Evitar añadir event listeners múltiples veces
+let _globalInteractionBound = false; // Evitar añadir listeners globales múltiples veces
 let _streamHealthTimer = null;
 let sessionInteracted = false; // Indica si el usuario ya interactuó en esta sesión o si ya intentó reproducir
 
@@ -131,6 +132,8 @@ function autoplayOnLoad() {
             banner.innerHTML = '<i class="fa-solid fa-play"></i> <span>TOCA PARA ESCUCHAR LA RADIO</span>';
             banner.classList.remove('hidden');
         }
+        // Registrar listeners globales para que suene al primer toque en cualquier parte
+        bindGlobalInteractionPlay();
         return;
     }
 
@@ -165,6 +168,9 @@ function autoplayOnLoad() {
                     banner.innerHTML = '<i class="fa-solid fa-play"></i> <span>TOCA PARA ESCUCHAR LA RADIO</span>';
                     banner.classList.remove('hidden');
                 }
+
+                // Registrar listeners globales para que suene al primer toque en cualquier parte
+                bindGlobalInteractionPlay();
             });
     }
 }
@@ -218,6 +224,35 @@ function activateAudio() {
                 }
             });
     }
+}
+
+
+// ESCUCHAR PRIMERA INTERACCIÓN EN CUALQUIER PARTE PARA ACTIVAR AUDIO
+function bindGlobalInteractionPlay() {
+    if (_globalInteractionBound) return;
+    _globalInteractionBound = true;
+
+    const startOnInteraction = () => {
+        // Si ya está reproduciendo o el usuario ya interactuó, remover listeners y salir
+        if (isAudioPlaying || sessionInteracted) {
+            removeListeners();
+            return;
+        }
+
+        console.log('Primera interacción del usuario detectada en el documento. Intentando iniciar audio...');
+        activateAudio();
+        removeListeners();
+    };
+
+    const removeListeners = () => {
+        document.removeEventListener('click', startOnInteraction);
+        document.removeEventListener('touchstart', startOnInteraction);
+        document.removeEventListener('keydown', startOnInteraction);
+    };
+
+    document.addEventListener('click', startOnInteraction);
+    document.addEventListener('touchstart', startOnInteraction, { passive: true });
+    document.addEventListener('keydown', startOnInteraction);
 }
 
 
