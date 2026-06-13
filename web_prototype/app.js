@@ -75,6 +75,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ACTIVACIÓN DE AUDIO (llamada desde el overlay con gesto real del usuario)
 let _streamHealthTimer = null;
+let _audioContext = null; // Web Audio API context global
+
+// Desbloquear el AudioContext del navegador (necesario en Chrome/Edge)
+// Sin esto, HTMLAudioElement reproduce pero no produce sonido
+function unlockAudioContext() {
+    return new Promise((resolve) => {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+            resolve(); // No disponible, continuar de todas formas
+            return;
+        }
+        if (!_audioContext) {
+            _audioContext = new AudioContextClass();
+        }
+        if (_audioContext.state === 'running') {
+            resolve();
+            return;
+        }
+        // Resume el contexto (requiere gesto del usuario)
+        _audioContext.resume().then(() => {
+            console.log('AudioContext desbloqueado, estado:', _audioContext.state);
+            resolve();
+        }).catch(() => resolve());
+    });
+}
 
 function activateAudio() {
     const overlay = document.getElementById('audio-activation-overlay');
@@ -92,8 +117,13 @@ function activateAudio() {
         setTimeout(() => overlay.remove(), 400);
     }
 
-    startRadioStream();
+    // CRÍTICO: Desbloquear el AudioContext PRIMERO (dentro del gesto del usuario)
+    // Esto es lo que permite que HTMLAudioElement produzca sonido en Chrome/Edge
+    unlockAudioContext().then(() => {
+        startRadioStream();
+    });
 }
+
 
 // Función central para iniciar el stream de radio
 function startRadioStream() {
@@ -317,7 +347,8 @@ function switchHomeTab(isRadio) {
         tvPanel.classList.add('hidden');
         
         pauseLiveTv();
-        playRadioWeb();
+        // Desbloquear AudioContext también al cambiar de pestaña
+        unlockAudioContext().then(() => playRadioWeb());
     } else {
         radioBtn.classList.remove('active');
         tvBtn.classList.add('active');
@@ -374,8 +405,8 @@ function toggleLiveRadio() {
         currentPlayingType = 'none';
         updateAudioUI();
     } else {
-        // Iniciar/reiniciar radio
-        startRadioStream();
+        // Iniciar/reiniciar radio con AudioContext desbloqueado
+        unlockAudioContext().then(() => startRadioStream());
     }
 }
 
@@ -388,7 +419,7 @@ function togglePlayState() {
         currentPlayingType = 'none';
         updateAudioUI();
     } else {
-        startRadioStream();
+        unlockAudioContext().then(() => startRadioStream());
     }
 }
 
