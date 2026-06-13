@@ -1,0 +1,655 @@
+// MOCK DATABASE STOCKS (Simula Supabase)
+let config = {
+    stream_radio: "https://streaming.lamaximafm.com:8000/stream", // Streaming de audio público continuo
+    stream_tv: "https://streaming.lamaximafm.com:2020/hls/lamaximatv/lamaximatv.m3u8", // Streaming HLS de prueba
+    facebook: "https://facebook.com/lamaxima885",
+    instagram: "https://instagram.com/lamaxima885",
+    youtube: "https://youtube.com/lamaxima885",
+    tiktok: "https://tiktok.com/@lamaxima885",
+    twitter: "https://twitter.com/lamaxima885"
+};
+
+let programas = [
+    {
+        id: "p1",
+        nombre: "El Mañanero Máximo",
+        locutor: "Hosta Máxima",
+        imagen: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=150&h=150",
+        hora_inicio: "06:00",
+        hora_fin: "10:00"
+    },
+    {
+        id: "p2",
+        nombre: "La Hora del Tapón",
+        locutor: "DJ Máxima & Compañía",
+        imagen: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150&h=150",
+        hora_inicio: "17:00",
+        hora_fin: "19:00"
+    },
+    {
+        id: "p3",
+        nombre: "Radio Máxima (Show En Vivo)",
+        locutor: "Hosta Máxima",
+        imagen: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150",
+        hora_inicio: "12:00",
+        hora_fin: "23:59"
+    }
+];
+
+// STATE MANAGEMENT
+let currentUser = null; // Simula sesión
+let currentPlayingType = 'none'; // 'none', 'radio'
+let isAudioPlaying = false;
+let activeAdminSection = 'programs';
+let editingItemId = null;
+let isTvPlaying = false;
+
+// HTML Elements
+const audioElement = document.getElementById('app-audio-element');
+const videoElement = document.getElementById('tv-video');
+const miniPlayer = document.getElementById('mini-player');
+const miniPlayBtn = document.getElementById('mini-play-btn');
+const miniCloseBtn = document.getElementById('mini-close-btn');
+
+const radioWaves = document.getElementById('radio-waves');
+const vinylDisc = document.getElementById('vinyl-disc');
+const giantPlayBtn = document.getElementById('giant-play-btn');
+const volumeSlider = document.getElementById('radio-volume-slider');
+
+// ON LOAD INITIALIZATION
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    renderAllViews();
+    setupListeners();
+    initWeeklySchedule();
+});
+
+// THEME MANAGEMENT
+function initTheme() {
+    const isDark = localStorage.getItem('theme-mode') === 'dark';
+    if (isDark) {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+        document.getElementById('theme-toggle').innerHTML = '<i class="fa-regular fa-sun"></i>';
+        updateLogoImages(true);
+    } else {
+        updateLogoImages(false);
+    }
+}
+
+document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+function toggleTheme() {
+    const isDark = document.body.classList.contains('dark-mode');
+    if (isDark) {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        document.getElementById('theme-toggle').innerHTML = '<i class="fa-regular fa-moon"></i>';
+        localStorage.setItem('theme-mode', 'light');
+        updateLogoImages(false);
+    } else {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+        document.getElementById('theme-toggle').innerHTML = '<i class="fa-regular fa-sun"></i>';
+        localStorage.setItem('theme-mode', 'dark');
+        updateLogoImages(true);
+    }
+}
+
+function updateLogoImages(isDark) {
+    const headerLogo = document.querySelector('.logo img');
+    const vinylLogo = document.querySelector('.vinyl-center img');
+    const src = isDark ? 'logo_dark.png' : 'logo.png';
+    if (headerLogo) headerLogo.src = src;
+    if (vinylLogo) vinylLogo.src = src;
+}
+
+// MODAL MANAGEMENT
+function showModal(modalId) {
+    const modalContainer = document.getElementById('modal-container');
+    modalContainer.classList.remove('hidden');
+    
+    // Hide all modal cards first
+    const cards = modalContainer.querySelectorAll('.modal-card');
+    cards.forEach(card => card.classList.add('hidden'));
+    
+    // Show target card
+    const target = document.getElementById(modalId);
+    if (target) {
+        target.classList.remove('hidden');
+    }
+}
+
+function closeModal() {
+    const modalContainer = document.getElementById('modal-container');
+    modalContainer.classList.add('hidden');
+    
+    const cards = modalContainer.querySelectorAll('.modal-card');
+    cards.forEach(card => card.classList.add('hidden'));
+}
+
+// RENDER DATA DYNAMICALLY
+function renderAllViews() {
+    renderHome();
+}
+
+function renderHome() {
+    // Ahora al aire (Buscar programa activo)
+    const now = new Date();
+    const currentHourStr = now.getHours().toString().padLeft(2, '0') + ":" + now.getMinutes().toString().padLeft(2, '0');
+    
+    let activeProg = programas.find(p => {
+        return currentHourStr >= p.hora_inicio && currentHourStr <= p.hora_fin;
+    }) || programas[2] || programas[0];
+
+    if (activeProg) {
+        document.getElementById('now-host-img').src = activeProg.imagen;
+        document.getElementById('now-program-title').innerText = activeProg.nombre;
+        document.getElementById('now-host-name').innerText = `Locutor: ${activeProg.locutor}`;
+        document.getElementById('now-schedule-time').innerText = `${activeProg.hora_inicio} - ${activeProg.hora_fin}`;
+        
+        document.getElementById('radio-now-program').innerText = activeProg.nombre;
+    }
+
+    // Enlaces sociales
+    document.getElementById('social-instagram').href = config.instagram;
+    document.getElementById('social-facebook').href = config.facebook;
+    document.getElementById('social-twitter').href = config.twitter;
+    document.getElementById('social-tiktok').href = config.tiktok;
+    document.getElementById('social-youtube').href = config.youtube;
+}
+
+// FORMAT HELPER
+String.prototype.padLeft = function(length, char) {
+    return this.length >= length ? this : (char.repeat(length - this.length) + this);
+};
+
+// ACTIONS LISTENERS
+function setupListeners() {
+    // Tab Segment switching (Radio vs TV)
+    document.getElementById('seg-radio-btn').addEventListener('click', () => switchHomeTab(true));
+    document.getElementById('seg-tv-btn').addEventListener('click', () => switchHomeTab(false));
+
+    // Radio Volume Control
+    volumeSlider.addEventListener('input', (e) => {
+        audioElement.volume = e.target.value / 100;
+    });
+
+    // Play/Pause Giant Button (Radio)
+    giantPlayBtn.addEventListener('click', toggleLiveRadio);
+
+    // Miniplayer controls
+    miniPlayBtn.addEventListener('click', togglePlayState);
+    miniCloseBtn.addEventListener('click', stopAudioPlayback);
+
+    // Admin toggle button in header
+    document.getElementById('admin-toggle').addEventListener('click', handleAdminToggle);
+
+    // Auth listeners
+    document.getElementById('auth-toggle-mode').addEventListener('click', toggleAuthMode);
+    document.getElementById('auth-form').addEventListener('submit', handleAuthSubmit);
+    document.getElementById('btn-logout').addEventListener('click', handleLogout);
+    
+    // Admin Panel routing
+    document.getElementById('admin-config-form').addEventListener('submit', handleConfigSave);
+}
+
+// TAB HOME SWITCHER (Radio vs TV)
+function switchHomeTab(isRadio) {
+    const radioBtn = document.getElementById('seg-radio-btn');
+    const tvBtn = document.getElementById('seg-tv-btn');
+    const radioPanel = document.getElementById('panel-radio');
+    const tvPanel = document.getElementById('panel-tv');
+
+    if (isRadio) {
+        radioBtn.classList.add('active');
+        tvBtn.classList.remove('active');
+        radioPanel.classList.remove('hidden');
+        tvPanel.classList.add('hidden');
+        
+        pauseLiveTv();
+    } else {
+        radioBtn.classList.remove('active');
+        tvBtn.classList.add('active');
+        radioPanel.classList.add('hidden');
+        tvPanel.classList.remove('hidden');
+        
+        // Pausar radio para evitar sonidos mezclados
+        if (isAudioPlaying) {
+            togglePlayState();
+        }
+        
+        playLiveTv();
+    }
+}
+
+// PLAY AUDIO / STREAMING (RADIO)
+function toggleLiveRadio() {
+    if (currentPlayingType === 'radio') {
+        togglePlayState();
+    } else {
+        stopAudioPlayback();
+        currentPlayingType = 'radio';
+        
+        audioElement.src = config.stream_radio;
+        audioElement.volume = volumeSlider.value / 100;
+        audioElement.play();
+        
+        isAudioPlaying = true;
+        updateAudioUI();
+    }
+}
+
+function togglePlayState() {
+    if (isAudioPlaying) {
+        audioElement.pause();
+        isAudioPlaying = false;
+    } else {
+        audioElement.play();
+        isAudioPlaying = true;
+    }
+    updateAudioUI();
+}
+
+function stopAudioPlayback() {
+    audioElement.pause();
+    audioElement.src = '';
+    isAudioPlaying = false;
+    currentPlayingType = 'none';
+    updateAudioUI();
+}
+
+// PLAY VIDEO STREAMING (TV)
+function playLiveTv() {
+    isTvPlaying = true;
+    if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(config.stream_tv);
+        hls.attachMedia(videoElement);
+        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+            videoElement.play();
+        });
+    } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
+        videoElement.src = config.stream_tv;
+        videoElement.play();
+    }
+}
+
+function pauseLiveTv() {
+    if (isTvPlaying) {
+        videoElement.pause();
+        isTvPlaying = false;
+    }
+}
+
+// SYNC UI WITH PLAYBACK STATES
+function updateAudioUI() {
+    // 1. Radio Tab UI (Giant Button, Waves, Vinyl)
+    const statusText = document.getElementById('radio-status-text');
+
+    if (currentPlayingType === 'radio' && isAudioPlaying) {
+        radioWaves.classList.add('playing');
+        vinylDisc.classList.add('playing');
+        giantPlayBtn.innerHTML = '<i class="fa-solid fa-circle-pause"></i>';
+        statusText.innerText = 'ESCUCHANDO AHORA';
+        statusText.style.color = 'var(--gold)';
+    } else {
+        radioWaves.classList.remove('playing');
+        vinylDisc.classList.remove('playing');
+        giantPlayBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        statusText.innerText = 'RADIO EN VIVO';
+        statusText.style.color = 'var(--text-muted)';
+    }
+
+    // 2. Mini Player (Bottom Float)
+    if (currentPlayingType === 'none') {
+        miniPlayer.classList.add('hidden');
+    } else {
+        miniPlayer.classList.remove('hidden');
+        
+        const thumb = document.getElementById('mini-player-thumb');
+        const title = document.getElementById('mini-player-title');
+        const subtitle = document.getElementById('mini-player-subtitle');
+        
+        thumb.innerHTML = '<i class="fa-solid fa-radio"></i>';
+        title.innerText = 'Radio En Vivo';
+        subtitle.innerText = 'La Máxima 88.9 FM';
+
+        miniPlayBtn.innerHTML = isAudioPlaying 
+            ? '<i class="fa-solid fa-circle-pause"></i>' 
+            : '<i class="fa-solid fa-circle-play"></i>';
+    }
+}
+
+// AUTH SIMULATOR
+function toggleAuthMode() {
+    const btn = document.getElementById('auth-toggle-mode');
+    const title = document.getElementById('auth-title');
+    const submit = document.getElementById('auth-submit-btn');
+    const nameGroup = document.getElementById('signup-name-group');
+
+    if (btn.innerText.includes('Regístrate')) {
+        title.innerText = 'Crear Cuenta';
+        submit.innerText = 'REGISTRARSE';
+        btn.innerText = '¿Ya tienes una cuenta? Inicia sesión';
+        nameGroup.classList.remove('hidden');
+    } else {
+        title.innerText = 'Iniciar Sesión';
+        submit.innerText = 'INGRESAR';
+        btn.innerText = '¿No tienes cuenta? Regístrate aquí';
+        nameGroup.classList.add('hidden');
+    }
+}
+
+function handleAdminToggle() {
+    if (currentUser && currentUser.is_admin) {
+        showAdminDashboard();
+    } else {
+        showModal('modal-auth');
+    }
+}
+
+function handleAuthSubmit(e) {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value;
+    const name = document.getElementById('auth-name').value || 'Administrador';
+    const isAdmin = email.toLowerCase() === 'admin@lamaxima.fm' || email.toLowerCase().includes('admin');
+
+    if (!isAdmin) {
+        alert("Acceso denegado. Solo administradores autorizados.");
+        return;
+    }
+
+    currentUser = {
+        nombre: name,
+        email: email,
+        is_admin: isAdmin
+    };
+
+    updateAdminUIState();
+    closeModal();
+    showAdminDashboard();
+}
+
+function handleLogout() {
+    currentUser = null;
+    updateAdminUIState();
+    closeModal();
+    alert("Sesión cerrada correctamente.");
+}
+
+function updateAdminUIState() {
+    const adminToggle = document.getElementById('admin-toggle');
+    const shieldIcon = adminToggle.querySelector('i');
+    
+    if (currentUser && currentUser.is_admin) {
+        shieldIcon.style.color = 'var(--gold)';
+        adminToggle.title = "Panel de Administración";
+    } else {
+        shieldIcon.style.color = '';
+        adminToggle.title = "Administración";
+    }
+}
+
+// PORTAL ADMINISTRATIVO
+function showAdminDashboard() {
+    showModal('modal-admin');
+    
+    const infoContainer = document.getElementById('admin-user-info');
+    if (infoContainer && currentUser) {
+        infoContainer.innerText = `Conectado como: ${currentUser.nombre} (${currentUser.email})`;
+    }
+    
+    switchAdminSection('programs');
+}
+
+function hideAdminDashboard() {
+    closeModal();
+}
+
+function switchAdminSection(section) {
+    activeAdminSection = section;
+    
+    const cards = document.querySelectorAll('.admin-grid-card');
+    const sections = ['programs', 'config'];
+    
+    cards.forEach((card, idx) => {
+        if (sections[idx] === section) {
+            card.style.borderColor = 'var(--gold)';
+            card.style.backgroundColor = 'var(--shadow)';
+        } else {
+            card.style.borderColor = 'var(--border)';
+            card.style.backgroundColor = 'var(--surface)';
+        }
+    });
+
+    sections.forEach(s => {
+        const secEl = document.getElementById(`admin-sec-${s}`);
+        if (s === section) {
+            secEl.classList.remove('hidden');
+        } else {
+            secEl.classList.add('hidden');
+        }
+    });
+
+    renderAdminLists();
+}
+
+function renderAdminLists() {
+    if (activeAdminSection === 'programs') {
+        const container = document.getElementById('admin-programs-list');
+        container.innerHTML = '';
+        programas.forEach(item => {
+            container.appendChild(createAdminRow(`${item.nombre} (${item.hora_inicio})`, item.id, () => openAdminForm('programs', item)));
+        });
+    } else if (activeAdminSection === 'config') {
+        document.getElementById('cfg-radio').value = config.stream_radio;
+        document.getElementById('cfg-tv').value = config.stream_tv;
+        document.getElementById('cfg-facebook').value = config.facebook;
+        document.getElementById('cfg-instagram').value = config.instagram;
+        document.getElementById('cfg-twitter').value = config.twitter;
+        document.getElementById('cfg-tiktok').value = config.tiktok;
+        document.getElementById('cfg-youtube').value = config.youtube;
+    }
+}
+
+function createAdminRow(label, id, onEdit) {
+    const div = document.createElement('div');
+    div.className = 'admin-item-row';
+    div.innerHTML = `
+        <span class="admin-item-info">${label}</span>
+        <div class="admin-item-actions">
+            <button class="edit-btn" style="color: #1877F2;"><i class="fa-solid fa-pen"></i></button>
+            <button class="del-btn" style="color: #ff3b30;"><i class="fa-solid fa-trash"></i></button>
+        </div>
+    `;
+    div.querySelector('.edit-btn').onclick = onEdit;
+    div.querySelector('.del-btn').onclick = () => deleteAdminItem(id);
+    return div;
+}
+
+// CRUD FORMULARIOS
+function openAdminForm(type, item = null) {
+    editingItemId = item ? item.id : null;
+    const title = document.getElementById('admin-form-title');
+    const fieldsContainer = document.getElementById('dynamic-form-fields');
+    fieldsContainer.innerHTML = '';
+
+    if (type === 'programs') {
+        title.innerText = item ? 'Editar Programa' : 'Crear Programa';
+        fieldsContainer.innerHTML = `
+            <div class="input-group"><label>Nombre del Programa</label><input type="text" id="frm-prog-name" value="${item ? item.nombre : ''}" required></div>
+            <div class="input-group"><label>Locutor</label><input type="text" id="frm-prog-host" value="${item ? item.locutor : ''}" required></div>
+            <div class="input-group"><label>Hora de Inicio</label><input type="text" id="frm-prog-start" value="${item ? item.hora_inicio : '08:00'}" required></div>
+            <div class="input-group"><label>Hora de Fin</label><input type="text" id="frm-prog-end" value="${item ? item.hora_fin : '10:00'}" required></div>
+            <div class="input-group"><label>URL Foto Locutor</label><input type="text" id="frm-prog-img" value="${item ? item.imagen : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150'}" required></div>
+        `;
+    }
+
+    document.getElementById('admin-crud-form').onsubmit = (e) => {
+        e.preventDefault();
+        saveAdminItem(type);
+    };
+
+    showModal('modal-admin-form');
+}
+
+function saveAdminItem(type) {
+    if (type === 'programs') {
+        const item = {
+            id: editingItemId || `p${Date.now()}`,
+            nombre: document.getElementById('frm-prog-name').value,
+            locutor: document.getElementById('frm-prog-host').value,
+            hora_inicio: document.getElementById('frm-prog-start').value,
+            hora_fin: document.getElementById('frm-prog-end').value,
+            imagen: document.getElementById('frm-prog-img').value
+        };
+
+        if (editingItemId) {
+            const idx = programas.findIndex(p => p.id === editingItemId);
+            programas[idx] = item;
+        } else {
+            programas.push(item);
+        }
+    }
+
+    closeModal();
+    renderAllViews();
+    renderAdminLists();
+}
+
+function deleteAdminItem(id) {
+    if (!confirm('¿Seguro que deseas eliminar este elemento?')) return;
+
+    if (activeAdminSection === 'programs') {
+        programas = programas.filter(p => p.id !== id);
+    }
+
+    renderAllViews();
+    renderAdminLists();
+}
+
+function handleConfigSave(e) {
+    e.preventDefault();
+    config.stream_radio = document.getElementById('cfg-radio').value;
+    config.stream_tv = document.getElementById('cfg-tv').value;
+    config.facebook = document.getElementById('cfg-facebook').value;
+    config.instagram = document.getElementById('cfg-instagram').value;
+    config.twitter = document.getElementById('cfg-twitter').value;
+    config.tiktok = document.getElementById('cfg-tiktok').value;
+    config.youtube = document.getElementById('cfg-youtube').value;
+    
+    alert('Configuración de enlaces actualizada correctamente.');
+    renderAllViews();
+    hideAdminDashboard();
+}
+
+// CLOSE MODAL ON OVERLAY CLICK
+document.getElementById('modal-container').addEventListener('click', (e) => {
+    if (e.target.id === 'modal-container') {
+        closeModal();
+    }
+});
+
+// WEEKLY SCHEDULE MANAGEMENT
+const weeklySchedule = {
+    "LUN": [
+        { name: "El Mañanero Máximo", time: "06:00 - 10:00", host: "Hosta Máxima" },
+        { name: "La Ruta de la Tarde", time: "10:00 - 14:00", host: "DJ Máxima" },
+        { name: "Top 40 Hits", time: "14:00 - 18:00", host: "DJ Máster" },
+        { name: "La Hora del Tapón", time: "18:00 - 22:00", host: "DJ Máxima & Co." },
+        { name: "Música Máxima", time: "22:00 - 06:00", host: "Música Continuada" }
+    ],
+    "MAR": [
+        { name: "El Mañanero Máximo", time: "06:00 - 10:00", host: "Hosta Máxima" },
+        { name: "La Ruta de la Tarde", time: "10:00 - 14:00", host: "DJ Máxima" },
+        { name: "Top 40 Hits", time: "14:00 - 18:00", host: "DJ Máster" },
+        { name: "La Hora del Tapón", time: "18:00 - 22:00", host: "DJ Máxima & Co." },
+        { name: "Música Máxima", time: "22:00 - 06:00", host: "Música Continuada" }
+    ],
+    "MIE": [
+        { name: "El Mañanero Máximo", time: "06:00 - 10:00", host: "Hosta Máxima" },
+        { name: "La Ruta de la Tarde", time: "10:00 - 14:00", host: "DJ Máxima" },
+        { name: "Top 40 Hits", time: "14:00 - 18:00", host: "DJ Máster" },
+        { name: "La Hora del Tapón", time: "18:00 - 22:00", host: "DJ Máxima & Co." },
+        { name: "Música Máxima", time: "22:00 - 06:00", host: "Música Continuada" }
+    ],
+    "JUE": [
+        { name: "El Mañanero Máximo", time: "06:00 - 10:00", host: "Hosta Máxima" },
+        { name: "La Ruta de la Tarde", time: "10:00 - 14:00", host: "DJ Máxima" },
+        { name: "Top 40 Hits", time: "14:00 - 18:00", host: "DJ Máster" },
+        { name: "La Hora del Tapón", time: "18:00 - 22:00", host: "DJ Máxima & Co." },
+        { name: "Música Máxima", time: "22:00 - 06:00", host: "Música Continuada" }
+    ],
+    "VIE": [
+        { name: "El Mañanero Máximo", time: "06:00 - 10:00", host: "Hosta Máxima" },
+        { name: "La Ruta de la Tarde", time: "10:00 - 14:00", host: "DJ Máxima" },
+        { name: "Top 40 Hits", time: "14:00 - 18:00", host: "DJ Máster" },
+        { name: "La Hora del Tapón", time: "18:00 - 22:00", host: "DJ Máxima & Co." },
+        { name: "Música Máxima", time: "22:00 - 06:00", host: "Música Continuada" }
+    ],
+    "SAB": [
+        { name: "El Calentón del Sábado", time: "08:00 - 12:00", host: "DJ Máster" },
+        { name: "Los Clásicos de la Máxima", time: "12:00 - 18:00", host: "DJ Carlos" },
+        { name: "Fiesta Máxima", time: "18:00 - 06:00", host: "Música Continuada" }
+    ],
+    "DOM": [
+        { name: "Domingo de Clásicos", time: "08:00 - 14:00", host: "DJ Carlos" },
+        { name: "El Solazo de la Tarde", time: "14:00 - 22:00", host: "DJ Máster" },
+        { name: "Música Máxima", time: "22:00 - 06:00", host: "Música Continuada" }
+    ]
+};
+
+function initWeeklySchedule() {
+    const dayButtons = document.querySelectorAll('.day-btn');
+    if (!dayButtons.length) return;
+
+    dayButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const day = e.currentTarget.getAttribute('data-day');
+            showScheduleDay(day);
+        });
+    });
+
+    // Auto-select current day
+    const dayKeys = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"];
+    const currentDayKey = dayKeys[new Date().getDay()];
+    showScheduleDay(currentDayKey);
+}
+
+function showScheduleDay(dayKey) {
+    // Update active button state
+    const dayButtons = document.querySelectorAll('.day-btn');
+    dayButtons.forEach(btn => {
+        if (btn.getAttribute('data-day') === dayKey) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+
+    // Populate list
+    const listContainer = document.getElementById('schedule-list');
+    if (!listContainer) return;
+
+    listContainer.innerHTML = '';
+    const dayPrograms = weeklySchedule[dayKey] || [];
+
+    if (dayPrograms.length === 0) {
+        listContainer.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:20px;">No hay programación para este día</div>';
+        return;
+    }
+
+    dayPrograms.forEach(prog => {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'schedule-item';
+        itemDiv.innerHTML = `
+            <div class="schedule-item-info">
+                <span class="schedule-item-title">${prog.name}</span>
+                <span class="schedule-item-host">Locución: ${prog.host}</span>
+            </div>
+            <span class="schedule-item-time">${prog.time}</span>
+        `;
+        listContainer.appendChild(itemDiv);
+    });
+}

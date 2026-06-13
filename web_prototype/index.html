@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Máxima 88.9 FM - Web Prototype</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Hls.js for playing HLS streams on Chrome/Windows -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="light-mode">
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="app-header">
+            <div class="logo" style="display: flex; align-items: center; height: 100%;">
+                <img src="logo.png" alt="La Máxima 88.9 FM" style="height: 48px; object-fit: contain;">
+            </div>
+            <div class="header-actions" style="display: flex; gap: 8px;">
+                <button id="admin-toggle" class="icon-btn" title="Administración">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </button>
+                <button id="theme-toggle" class="icon-btn" title="Cambiar Tema">
+                    <i class="fa-regular fa-moon"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN SCROLLABLE BODY -->
+        <main class="app-body">
+            
+            <!-- SECTION 1: HOME VIEW (MEDIA PLAYER CENTRIC) -->
+            <section id="view-home" class="app-view active">
+                
+                <!-- SLIDING SEGMENT SELECTOR -->
+                <div class="segment-selector">
+                    <button class="segment-btn active" id="seg-radio-btn">
+                        <i class="fa-solid fa-radio"></i> RADIO FM
+                    </button>
+                    <button class="segment-btn" id="seg-tv-btn">
+                        <i class="fa-solid fa-video"></i> CABINA EN VIVO
+                    </button>
+                </div>
+
+                <!-- MAIN WORKSPACE GRID -->
+                <div class="main-grid-container">
+                    <!-- LEFT COLUMN: PLAYER -->
+                    <div class="player-column">
+                        <!-- MEDIA PANELS -->
+                        <div class="media-panels">
+                            
+                            <!-- PANEL A: RADIO PLAYER -->
+                            <div id="panel-radio" class="media-panel">
+                                <!-- Vinyl / Logo Disc -->
+                                <div class="vinyl-container">
+                                    <div class="vinyl-disc" id="vinyl-disc">
+                                        <div class="vinyl-center" style="width: 60px; height: 60px; overflow: hidden; background-color: var(--surface); border: 2px solid var(--gold); display: flex; justify-content: center; align-items: center; transition: background-color 0.3s;">
+                                            <img src="logo.png" alt="Logo" style="width: 90%; height: 90%; object-fit: contain;">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Status text -->
+                                <div class="media-status-label" style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 2px;">
+                                    <span class="pulse-dot"></span> <span id="radio-status-text">RADIO EN VIVO</span>
+                                </div>
+                                <div class="media-now-playing" id="radio-now-program">Radio Máxima</div>
+                                
+                                <!-- Large Wave Visualizer -->
+                                <div class="waves-visualizer" id="radio-waves" style="height: 40px; margin: 12px 0;">
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                    <span class="wave-bar"></span>
+                                </div>
+
+                                <!-- Giant circular play button -->
+                                <div class="giant-play-container">
+                                    <button id="giant-play-btn" class="giant-play-btn">
+                                        <i class="fa-solid fa-play"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Volume Slider -->
+                                <div class="volume-slider-container">
+                                    <i class="fa-solid fa-volume-low text-muted"></i>
+                                    <input type="range" id="radio-volume-slider" min="0" max="100" value="100">
+                                    <i class="fa-solid fa-volume-high text-muted"></i>
+                                </div>
+                            </div>
+
+                            <!-- PANEL B: TV PLAYER -->
+                            <div id="panel-tv" class="media-panel hidden">
+                                <div class="tv-player-container-static" style="position: relative; width: 100%;">
+                                    <span class="live-badge"><span class="pulse-dot"></span> EN VIVO</span>
+                                    <video id="tv-video" controls autoplay muted></video>
+                                </div>
+                                <div class="media-status-label" style="margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <span class="pulse-dot"></span> TRANSMISIÓN EN VIVO
+                                </div>
+                                <div class="media-now-playing" style="font-size: 16px;">La Máxima TV HD</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: INFO & SOCIALS -->
+                    <div class="info-column">
+                        <!-- NOW ON AIR (Shared bottom grilla info) -->
+                        <div class="section-title" style="margin-top: 0;">PROGRAMACIÓN ACTUAL</div>
+                        <div class="now-playing-card">
+                            <img id="now-host-img" src="https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=150&h=150" alt="Locutor">
+                            <div class="now-playing-info">
+                                <div class="program-title" id="now-program-title">Radio Máxima</div>
+                                <div class="host-name" id="now-host-name">Locutor: Hosta Máxima</div>
+                                <div class="schedule">
+                                    <i class="fa-regular fa-clock"></i> <span id="now-schedule-time">19:00 - 20:00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- WEEKLY SCHEDULE CARD -->
+                        <div class="section-title" style="margin-top: 24px;">PROGRAMACIÓN SEMANAL</div>
+                        <div class="schedule-card">
+                            <div class="days-selector">
+                                <button class="day-btn" data-day="LUN">L</button>
+                                <button class="day-btn" data-day="MAR">M</button>
+                                <button class="day-btn" data-day="MIE">M</button>
+                                <button class="day-btn" data-day="JUE">J</button>
+                                <button class="day-btn" data-day="VIE">V</button>
+                                <button class="day-btn" data-day="SAB">S</button>
+                                <button class="day-btn" data-day="DOM">D</button>
+                            </div>
+                            <div class="schedule-list" id="schedule-list">
+                                <!-- Se llena dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- SOCIAL MEDIA BAR -->
+                        <div class="social-bar" style="margin-top: 30px;">
+                            <div class="social-title">SÍGUENOS EN REDES</div>
+                            <div class="social-icons">
+                                <a href="#" class="social-icon instagram" id="social-instagram" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+                                <a href="#" class="social-icon facebook" id="social-facebook" target="_blank"><i class="fa-brands fa-facebook-f"></i></a>
+                                <a href="#" class="social-icon twitter" id="social-twitter" target="_blank"><i class="fa-brands fa-x-twitter"></i></a>
+                                <a href="#" class="social-icon tiktok" id="social-tiktok" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+                                <a href="#" class="social-icon youtube" id="social-youtube" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+                            </div>
+                            <div class="footer-copyright" style="margin-top: 24px; font-size: 11px; color: var(--text-muted); opacity: 0.8; letter-spacing: 0.5px;">
+                                © 2026 La Máxima 88.9 FM. Todos los derechos reservados.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REGISTROS MODALES (Admin/Auth) SE RELOCALIZAN ABAJO -->
+        </main>
+
+        <!-- PERSISTENT MINI PLAYER -->
+        <div id="mini-player" class="mini-player hidden">
+            <div class="mini-player-progress-bar" id="mini-player-progress"></div>
+            <div class="mini-player-content">
+                <div class="mini-player-thumb" id="mini-player-thumb">
+                    <i class="fa-solid fa-radio"></i>
+                </div>
+                <div class="mini-player-info">
+                    <div class="mini-player-title" id="mini-player-title">Radio En Vivo</div>
+                    <div class="mini-player-subtitle" id="mini-player-subtitle">La Máxima 88.9 FM</div>
+                </div>
+                <div class="mini-player-controls">
+                    <button id="mini-play-btn" class="icon-btn gold-color"><i class="fa-solid fa-circle-pause"></i></button>
+                    <button id="mini-close-btn" class="icon-btn"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL POPUPS (Admin / Auth / Forms) -->
+        <div id="modal-container" class="modal-overlay hidden">
+        <!-- AUTH MODAL -->
+        <div id="modal-auth" class="modal-card hidden">
+            <div class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></div>
+            <div class="modal-content">
+                <div class="auth-header-icon" style="text-align: center; font-size: 44px; color: var(--gold); margin-bottom: 12px;"><i class="fa-solid fa-lock"></i></div>
+                <h3 id="auth-title" style="text-align: center; margin-bottom: 20px;">Iniciar Sesión</h3>
+                <form id="auth-form" class="admin-form">
+                    <div class="input-group hidden" id="signup-name-group">
+                        <label for="auth-name">Nombre Completo</label>
+                        <input type="text" id="auth-name" placeholder="Tu nombre">
+                    </div>
+                    <div class="input-group">
+                        <label for="auth-email">Correo Electrónico</label>
+                        <input type="email" id="auth-email" placeholder="correo@ejemplo.com" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="auth-password">Contraseña</label>
+                        <input type="password" id="auth-password" placeholder="Mínimo 6 caracteres" required>
+                    </div>
+                    <button type="submit" class="btn gold-btn" id="auth-submit-btn">INGRESAR</button>
+                </form>
+                <button class="text-link-btn" id="auth-toggle-mode" style="margin-top: 14px; width: 100%; text-align: center;">¿No tienes cuenta? Regístrate aquí</button>
+            </div>
+        </div>
+
+        <!-- ADMIN DASHBOARD MODAL -->
+        <div id="modal-admin" class="modal-card hidden">
+            <div class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></div>
+            <div class="modal-content">
+                <div class="admin-header" style="margin-bottom: 16px;">
+                    <h2 style="font-size: 20px; font-weight: 700;">Panel Admin</h2>
+                    <div id="admin-user-info" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></div>
+                </div>
+                
+                <div class="admin-grid" style="grid-template-columns: repeat(2, 1fr); margin-bottom: 20px; gap: 10px;">
+                    <div class="admin-grid-card" onclick="switchAdminSection('programs')">
+                        <i class="fa-solid fa-radio" style="color: #9c27b0;"></i>
+                        <h4>Programas</h4>
+                    </div>
+                    <div class="admin-grid-card" onclick="switchAdminSection('config')">
+                        <i class="fa-solid fa-sliders" style="color: var(--text);"></i>
+                        <h4>Configuración</h4>
+                    </div>
+                </div>
+
+                <!-- ADMIN SECTIONS -->
+                <div class="admin-sections-container">
+                    <!-- MANAGE PROGRAMS -->
+                    <div id="admin-sec-programs" class="admin-section hidden">
+                        <h3 style="font-size: 16px; margin-bottom: 12px;">Gestionar Programas</h3>
+                        <button class="btn gold-btn sm-btn" onclick="openAdminForm('programs')"><i class="fa-solid fa-plus"></i> Nuevo Programa</button>
+                        <div class="admin-items-list" id="admin-programs-list"></div>
+                    </div>
+
+                    <!-- MANAGE CONFIG -->
+                    <div id="admin-sec-config" class="admin-section hidden">
+                        <h3 style="font-size: 16px; margin-bottom: 12px;">Configuración</h3>
+                        <form id="admin-config-form" class="admin-form">
+                            <div class="input-group">
+                                <label>Streaming Radio URL</label>
+                                <input type="text" id="cfg-radio" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Streaming TV URL (HLS / m3u8)</label>
+                                <input type="text" id="cfg-tv" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Facebook URL</label>
+                                <input type="text" id="cfg-facebook">
+                            </div>
+                            <div class="input-group">
+                                <label>Instagram URL</label>
+                                <input type="text" id="cfg-instagram">
+                            </div>
+                            <div class="input-group">
+                                <label>X (Twitter) URL</label>
+                                <input type="text" id="cfg-twitter">
+                            </div>
+                            <div class="input-group">
+                                <label>TikTok URL</label>
+                                <input type="text" id="cfg-tiktok">
+                            </div>
+                            <div class="input-group">
+                                <label>YouTube URL</label>
+                                <input type="text" id="cfg-youtube">
+                            </div>
+                            <button type="submit" class="btn gold-btn">Guardar Enlaces</button>
+                        </form>
+                    </div>
+                </div>
+
+                <hr>
+                <button class="btn danger-btn" id="btn-logout"><i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión</button>
+            </div>
+        </div>
+
+        <!-- ADMIN CRUD FORM -->
+        <div id="modal-admin-form" class="modal-card hidden">
+            <div class="modal-close" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></div>
+            <div class="modal-content">
+                <h2 id="admin-form-title">Crear Item</h2>
+                <form id="admin-crud-form" class="admin-form">
+                    <div id="dynamic-form-fields"></div>
+                    <button type="submit" class="btn gold-btn">Guardar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- AUDIO PLAYER ELEMENT -->
+    <audio id="app-audio-element"></audio>
+
+    <script src="app.js"></script>
+</body>
+</html>
