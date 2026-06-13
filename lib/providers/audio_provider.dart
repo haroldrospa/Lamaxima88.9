@@ -49,11 +49,6 @@ class AudioProvider extends ChangeNotifier {
   // Reproducir Streaming de Radio en Vivo
   Future<void> playRadio(String radioUrl, String programName, {String? imageUrl}) async {
     try {
-      if (_currentType == AudioType.radio && _player.playing) {
-        _currentProgramName = programName;
-        notifyListeners();
-        return;
-      }
       _currentType = AudioType.radio;
       _currentPodcast = null;
       _currentProgramName = programName;

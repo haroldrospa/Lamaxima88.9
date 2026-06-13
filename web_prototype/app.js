@@ -55,7 +55,7 @@ const vinylDisc = document.getElementById('vinyl-disc');
 const giantPlayBtn = document.getElementById('giant-play-btn');
 const volumeSlider = document.getElementById('radio-volume-slider');
 
-// ON LOAD INITIALIZATION
+// ON LOAD INITIALIZATION (Runs immediately for instant playback)
 initTheme();
 renderAllViews();
 setupListeners();
