@@ -10,7 +10,7 @@ class AudioProvider extends ChangeNotifier {
   
   AudioType _currentType = AudioType.none;
   Podcast? _currentPodcast;
-  String _currentProgramName = 'Radio Máxima';
+  String _currentProgramName = 'LA MÁXIMA 88.9 FM';
   String _currentSongName = 'La Máxima 88.9 FM';
   
   bool _isBuffering = false;

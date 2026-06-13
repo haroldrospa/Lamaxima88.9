@@ -27,7 +27,7 @@ let programas = [
     },
     {
         id: "p3",
-        nombre: "Radio Máxima (Show En Vivo)",
+        nombre: "LA MÁXIMA 88.9 FM",
         locutor: "Hosta Máxima",
         imagen: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150&h=150",
         hora_inicio: "12:00",
