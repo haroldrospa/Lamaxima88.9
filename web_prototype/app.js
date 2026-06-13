@@ -63,6 +63,11 @@ const giantPlayBtn = document.getElementById('giant-play-btn');
 const volumeSlider = document.getElementById('radio-volume-slider');
 
 
+// DETECCIÓN DE iOS SAFARI
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const isIOSSafari = isIOS; // En iOS todos los navegadores usan WebKit/Safari engine
+
 // ON LOAD INITIALIZATION — wrapped in DOMContentLoaded for safety
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
@@ -70,20 +75,56 @@ document.addEventListener('DOMContentLoaded', function() {
     setupListeners();
     initWeeklySchedule();
     initVideoControls();
+    applyIOSFixes();
     // Intentar reproducir la radio automáticamente al cargar
     autoplayOnLoad();
 });
 
-// AUTOPLAY AL CARGAR — intenta muted primero (Chrome lo permite), luego desmutea
+// FIXES ESPECÍFICOS PARA iOS
+function applyIOSFixes() {
+    if (!isIOSSafari) return;
+
+    // En iOS, el volumen de audio/video es controlado por el sistema, no por JS.
+    // Ocultamos los sliders de volumen para evitar confusión.
+    const radioVolumeContainer = document.querySelector('.volume-slider-container');
+    if (radioVolumeContainer) radioVolumeContainer.style.display = 'none';
+
+    const videoVolumeContainer = document.querySelector('.video-volume-container');
+    if (videoVolumeContainer) videoVolumeContainer.style.display = 'none';
+
+    // En iPhone, el botón de pantalla completa nativo del video ya aparece automáticamente
+    // en la barra de controles del sistema. Ocultamos el nuestro para evitar duplicados.
+    const pipBtn = document.getElementById('video-pip-btn');
+    if (pipBtn) pipBtn.style.display = 'none';
+
+    console.log('iOS Safari detectado — ajustes aplicados.');
+}
+
+// AUTOPLAY AL CARGAR
+// - En Chrome/Edge: intenta muted primero, luego desmutea inmediatamente (funciona)
+// - En iOS Safari: el autoplay de audio está bloqueado por el sistema operativo.
+//   Mostramos un banner de "Tocar para escuchar" que solo ocupa la parte inferior.
 function autoplayOnLoad() {
     if (!_autoplayListenersBound) {
         bindAudioStateEvents();
         _autoplayListenersBound = true;
     }
+
+    // En iOS, el autoplay de audio siempre requiere gesto del usuario.
+    // Mostramos directamente el banner en vez de intentar y fallar.
+    if (isIOSSafari) {
+        currentPlayingType = 'none';
+        isAudioPlaying = false;
+        updateAudioUI();
+        const banner = document.getElementById('autoplay-blocked-banner');
+        if (banner) banner.style.display = 'flex';
+        return;
+    }
+
     currentPlayingType = 'radio';
     audioElement.src = config.stream_radio;
-    audioElement.volume = 1.0;
-    audioElement.muted = true; // Muted primero para evitar bloqueo de autoplay
+    if (!isIOSSafari) audioElement.volume = 1.0;
+    audioElement.muted = true; // Muted primero para evitar bloqueo de autoplay en Chrome
 
     const playPromise = audioElement.play();
     if (playPromise !== undefined) {
@@ -91,28 +132,27 @@ function autoplayOnLoad() {
             .then(() => {
                 // Reproduciendo con mute — desmutear inmediatamente
                 audioElement.muted = false;
-                if (volumeSlider) volumeSlider.value = 100;
+                if (volumeSlider && !isIOSSafari) volumeSlider.value = 100;
                 isAudioPlaying = true;
                 updateAudioUI();
                 startStreamHealthCheck();
-                // Asegurarse de que el banner esté oculto
                 const banner = document.getElementById('autoplay-blocked-banner');
                 if (banner) banner.style.display = 'none';
             })
             .catch(err => {
                 console.warn('Autoplay bloqueado por el navegador:', err.message);
-                // Mostrar banner discreto para que el usuario lo active
                 isAudioPlaying = false;
                 currentPlayingType = 'none';
                 updateAudioUI();
                 const banner = document.getElementById('autoplay-blocked-banner');
-                if (banner) banner.style.display = 'block';
+                if (banner) banner.style.display = 'flex';
             });
     }
 }
 
 
 // ACTIVACIÓN MANUAL — llamada cuando el usuario toca el banner de autoplay bloqueado
+// En iOS Safari esta es la Única forma válida de iniciar audio: dentro de un gesto.
 function activateAudio() {
     const banner = document.getElementById('autoplay-blocked-banner');
 
@@ -125,11 +165,14 @@ function activateAudio() {
     // Ocultar banner
     if (banner) banner.style.display = 'none';
 
-    // play() SÍNCRONO dentro del gesto del usuario — Chrome lo acepta
+    // play() SÍNCRONO dentro del gesto del usuario — iOS y Chrome lo aceptan
     currentPlayingType = 'radio';
-    audioElement.volume = 1.0;
+    // No establecer volume en iOS (solo lectura)
+    if (!isIOSSafari) {
+        audioElement.volume = 1.0;
+        if (volumeSlider) volumeSlider.value = 100;
+    }
     audioElement.muted = false;
-    if (volumeSlider) volumeSlider.value = 100;
     audioElement.src = config.stream_radio;
 
     const playPromise = audioElement.play();
@@ -145,6 +188,13 @@ function activateAudio() {
                 isAudioPlaying = false;
                 currentPlayingType = 'none';
                 updateAudioUI();
+                // Si falla en iOS, mostrar mensaje más claro
+                if (isIOSSafari) {
+                    if (banner) {
+                        banner.innerHTML = '<i class="fa-solid fa-rotate-right"></i> TOCA PARA REINTENTAR';
+                        banner.style.display = 'flex';
+                    }
+                }
             });
     }
 }
@@ -154,9 +204,11 @@ function activateAudio() {
 function startRadioStream() {
     clearTimeout(_streamHealthTimer);
     currentPlayingType = 'radio';
-    audioElement.volume = 1.0;
+    if (!isIOSSafari) {
+        audioElement.volume = 1.0;
+        if (volumeSlider) volumeSlider.value = 100;
+    }
     audioElement.muted = false;
-    volumeSlider.value = 100;
     // URL limpia sin cache-busting — Icecast puede rechazar query params
     audioElement.src = config.stream_radio;
 
@@ -933,23 +985,31 @@ function initVideoControls() {
     }
 
     // Fullscreen toggle
+    // NOTA: En iOS Safari/iPhone, requestFullscreen() NO funciona en elementos div.
+    // Solo funciona video.webkitEnterFullscreen() directamente en el <video>.
     fullscreenBtn.addEventListener('click', () => {
-        const parent = video.parentElement;
-        if (parent.requestFullscreen) {
-            if (!document.fullscreenElement) {
-                parent.requestFullscreen().catch(err => {
-                    console.error(`Error al activar pantalla completa: ${err.message}`);
-                });
-                fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
-            } else {
-                document.exitFullscreen();
-                fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+        if (isIOSSafari) {
+            // iOS Safari: solo webkitEnterFullscreen funciona, y solo en el elemento <video>
+            if (video.webkitEnterFullscreen) {
+                video.webkitEnterFullscreen();
             }
-        } else if (video.webkitEnterFullscreen) {
-            // Fallback for iOS iPhone Safari where standard requestFullscreen is not supported on elements, but webkitEnterFullscreen is supported on video
-            video.webkitEnterFullscreen();
-        } else if (video.webkitRequestFullscreen) {
-            video.webkitRequestFullscreen();
+            return;
+        }
+
+        // Chrome/Edge/Firefox/desktop Safari
+        const parent = video.parentElement;
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            const fullscreenEl = parent.requestFullscreen || parent.webkitRequestFullscreen;
+            if (fullscreenEl) {
+                (parent.requestFullscreen ? parent.requestFullscreen() : parent.webkitRequestFullscreen())
+                    .catch(err => console.error(`Error pantalla completa: ${err.message}`));
+                fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            } else if (video.webkitEnterFullscreen) {
+                video.webkitEnterFullscreen();
+            }
+        } else {
+            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
         }
     });
 
