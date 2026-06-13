@@ -702,6 +702,7 @@ function initVideoControls() {
     const muteBtn = document.getElementById('video-mute-btn');
     const volumeSlider = document.getElementById('video-volume');
     const fullscreenBtn = document.getElementById('video-fullscreen-btn');
+    const pipBtn = document.getElementById('video-pip-btn');
 
     if (!video || !playBtn || !muteBtn || !volumeSlider || !fullscreenBtn) return;
 
@@ -743,14 +744,21 @@ function initVideoControls() {
     // Fullscreen toggle
     fullscreenBtn.addEventListener('click', () => {
         const parent = video.parentElement;
-        if (!document.fullscreenElement) {
-            parent.requestFullscreen().catch(err => {
-                console.error(`Error al activar pantalla completa: ${err.message}`);
-            });
-            fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
-        } else {
-            document.exitFullscreen();
-            fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+        if (parent.requestFullscreen) {
+            if (!document.fullscreenElement) {
+                parent.requestFullscreen().catch(err => {
+                    console.error(`Error al activar pantalla completa: ${err.message}`);
+                });
+                fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            } else {
+                document.exitFullscreen();
+                fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            }
+        } else if (video.webkitEnterFullscreen) {
+            // Fallback for iOS iPhone Safari where standard requestFullscreen is not supported on elements, but webkitEnterFullscreen is supported on video
+            video.webkitEnterFullscreen();
+        } else if (video.webkitRequestFullscreen) {
+            video.webkitRequestFullscreen();
         }
     });
 
@@ -758,6 +766,54 @@ function initVideoControls() {
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
             fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+        }
+    });
+
+    // iOS specific end fullscreen listener
+    video.addEventListener('webkitendfullscreen', () => {
+        fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+    });
+
+    // Picture-in-Picture toggle
+    if (pipBtn) {
+        const isPipSupported = 
+            document.pictureInPictureEnabled || 
+            (video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function');
+
+        if (!isPipSupported) {
+            pipBtn.style.display = 'none';
+        } else {
+            pipBtn.addEventListener('click', async () => {
+                try {
+                    if (document.pictureInPictureEnabled) {
+                        if (document.pictureInPictureElement !== video) {
+                            await video.requestPictureInPicture();
+                        } else {
+                            await document.exitPictureInPicture();
+                        }
+                    } else if (video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function') {
+                        const newMode = video.webkitPresentationMode === 'picture-in-picture' ? 'inline' : 'picture-in-picture';
+                        video.webkitSetPresentationMode(newMode);
+                    }
+                } catch (err) {
+                    console.error(`Error al activar Picture-in-Picture: ${err.message}`);
+                }
+            });
+        }
+    }
+
+    // Automatic Picture-in-Picture fallback when exiting the app (visibility change)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            if (isTvPlaying && !video.paused) {
+                if (document.pictureInPictureEnabled && document.pictureInPictureElement !== video) {
+                    video.requestPictureInPicture().catch(() => {});
+                } else if (video.webkitSupportsPresentationMode && typeof video.webkitSetPresentationMode === 'function') {
+                    if (video.webkitPresentationMode !== 'picture-in-picture') {
+                        video.webkitSetPresentationMode('picture-in-picture');
+                    }
+                }
+            }
         }
     });
 
