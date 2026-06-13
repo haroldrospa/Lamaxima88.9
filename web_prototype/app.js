@@ -73,33 +73,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // y activateAudio() se llamará con un gesto real del usuario
 });
 
-// ACTIVACIÓN DE AUDIO (llamada desde el overlay con gesto real del usuario)
+// ACTIVACIÓN DE AUDIO
+// REGLA CRÍTICA: audioElement.play() DEBE llamarse SINCRÓNICAMENTE
+// dentro del handler del gesto del usuario (onclick/touchstart).
+// Si se llama dentro de un .then() o setTimeout(), Chrome puede denegar el permiso.
 let _streamHealthTimer = null;
-let _audioContext = null; // Web Audio API context global
-
-// Desbloquear el AudioContext del navegador (necesario en Chrome/Edge)
-// Sin esto, HTMLAudioElement reproduce pero no produce sonido
-function unlockAudioContext() {
-    return new Promise((resolve) => {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) {
-            resolve(); // No disponible, continuar de todas formas
-            return;
-        }
-        if (!_audioContext) {
-            _audioContext = new AudioContextClass();
-        }
-        if (_audioContext.state === 'running') {
-            resolve();
-            return;
-        }
-        // Resume el contexto (requiere gesto del usuario)
-        _audioContext.resume().then(() => {
-            console.log('AudioContext desbloqueado, estado:', _audioContext.state);
-            resolve();
-        }).catch(() => resolve());
-    });
-}
 
 function activateAudio() {
     const overlay = document.getElementById('audio-activation-overlay');
@@ -110,37 +88,52 @@ function activateAudio() {
         _autoplayListenersBound = true;
     }
 
-    // Ocultar overlay inmediatamente para no bloquear UI
+    // Ocultar overlay
     if (overlay) {
         overlay.style.transition = 'opacity 0.4s ease';
         overlay.style.opacity = '0';
         setTimeout(() => overlay.remove(), 400);
     }
 
-    // CRÍTICO: Desbloquear el AudioContext PRIMERO (dentro del gesto del usuario)
-    // Esto es lo que permite que HTMLAudioElement produzca sonido en Chrome/Edge
-    unlockAudioContext().then(() => {
-        startRadioStream();
-    });
-}
-
-
-// Función central para iniciar el stream de radio
-function startRadioStream() {
-    // Detener cualquier stream previo limpiamente
-    audioElement.pause();
-    audioElement.removeAttribute('src');
-
-    // Configurar audio
+    // ─────────────────────────────────────────────────────────────────
+    // TODO LO SIGUIENTE ES SÍNCRONO — dentro del gesto del usuario
+    // No usar .then(), await, ni setTimeout antes del .play()
+    // ─────────────────────────────────────────────────────────────────
+    currentPlayingType = 'radio';
     audioElement.volume = 1.0;
     audioElement.muted = false;
     volumeSlider.value = 100;
-    currentPlayingType = 'radio';
+    audioElement.src = config.stream_radio; // URL limpia, sin parámetros
+    
+    // play() SÍNCRONO — Chrome acepta esto como gesto del usuario
+    const playPromise = audioElement.play();
 
-    // Asignar fuente NUEVA con timestamp para evitar cache del navegador
-    const streamUrl = config.stream_radio + (config.stream_radio.includes('?') ? '&' : '?') + '_t=' + Date.now();
-    audioElement.src = streamUrl;
-    // NO llamar load() — play() se encarga de iniciar la carga
+    if (playPromise !== undefined) {
+        playPromise
+            .then(() => {
+                isAudioPlaying = true;
+                updateAudioUI();
+                startStreamHealthCheck();
+            })
+            .catch(err => {
+                console.error("activateAudio play() fallido:", err);
+                // Si falla, mostrar botón de reintento
+                isAudioPlaying = false;
+                currentPlayingType = 'none';
+                updateAudioUI();
+            });
+    }
+}
+
+// Función para iniciar/reiniciar el stream de radio (puede ser async — ya tenemos permiso)
+function startRadioStream() {
+    clearTimeout(_streamHealthTimer);
+    currentPlayingType = 'radio';
+    audioElement.volume = 1.0;
+    audioElement.muted = false;
+    volumeSlider.value = 100;
+    // URL limpia sin cache-busting — Icecast puede rechazar query params
+    audioElement.src = config.stream_radio;
 
     const playPromise = audioElement.play();
     if (playPromise !== undefined) {
@@ -148,18 +141,16 @@ function startRadioStream() {
             .then(() => {
                 isAudioPlaying = true;
                 updateAudioUI();
-                // Monitorear salud del stream
                 startStreamHealthCheck();
             })
             .catch(err => {
-                console.error("Error al reproducir:", err);
+                console.error("startRadioStream play() fallido:", err);
                 isAudioPlaying = false;
                 updateAudioUI();
-                // Mostrar botón de reintento
-                showRetryButton();
             });
     }
 }
+
 
 // Monitor de salud del stream: detecta si el audio está "playing" pero sin datos reales
 function startStreamHealthCheck() {
@@ -347,8 +338,8 @@ function switchHomeTab(isRadio) {
         tvPanel.classList.add('hidden');
         
         pauseLiveTv();
-        // Desbloquear AudioContext también al cambiar de pestaña
-        unlockAudioContext().then(() => playRadioWeb());
+        playRadioWeb();
+
     } else {
         radioBtn.classList.remove('active');
         tvBtn.classList.add('active');
@@ -405,8 +396,8 @@ function toggleLiveRadio() {
         currentPlayingType = 'none';
         updateAudioUI();
     } else {
-        // Iniciar/reiniciar radio con AudioContext desbloqueado
-        unlockAudioContext().then(() => startRadioStream());
+        // Iniciar/reiniciar radio
+        startRadioStream();
     }
 }
 
@@ -419,7 +410,7 @@ function togglePlayState() {
         currentPlayingType = 'none';
         updateAudioUI();
     } else {
-        unlockAudioContext().then(() => startRadioStream());
+        startRadioStream();
     }
 }
 
