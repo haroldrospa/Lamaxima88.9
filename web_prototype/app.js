@@ -352,6 +352,7 @@ let hlsInstance = null;
 
 function playLiveTv() {
     isTvPlaying = true;
+    videoElement.muted = false; // Unmute because user clicked the tab/button
     
     // Explicitly set inline playback attributes for iOS Safari
     videoElement.setAttribute('playsinline', 'true');
@@ -817,6 +818,11 @@ function initVideoControls() {
         updateVolumeUI();
     });
 
+    // Sync volume UI on external changes
+    video.addEventListener('volumechange', () => {
+        updateVolumeUI();
+    });
+
     function updateVolumeUI() {
         volumeSlider.value = video.muted ? 0 : video.volume;
         if (video.muted || video.volume == 0) {
@@ -905,7 +911,7 @@ function initVideoControls() {
     });
 
     // Initial setup sync
-    video.volume = 0.5;
-    video.muted = true;
+    video.volume = 1.0;
+    video.muted = false;
     updateVolumeUI();
 }
