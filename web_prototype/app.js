@@ -47,6 +47,7 @@ let isAudioPlaying = false;
 let activeAdminSection = 'programs';
 let editingItemId = null;
 let isTvPlaying = false;
+let _autoplayListenersBound = false; // Evitar añadir event listeners múltiples veces
 
 // HTML Elements
 const audioElement = document.getElementById('app-audio-element');
@@ -72,45 +73,90 @@ document.addEventListener('DOMContentLoaded', function() {
     // y activateAudio() se llamará con un gesto real del usuario
 });
 
-// ACTIVACIÓN DE AUDIO (llamada desde el overlay)
-// Al ser llamada desde un onclick real, el navegador SIEMPRE permite el sonido
+// ACTIVACIÓN DE AUDIO (llamada desde el overlay con gesto real del usuario)
+let _streamHealthTimer = null;
+
 function activateAudio() {
     const overlay = document.getElementById('audio-activation-overlay');
-    
-    // Iniciar radio con volumen completo (el navegador permite porque hay interacción real)
+
+    // Bind eventos de estado una sola vez
+    if (!_autoplayListenersBound) {
+        bindAudioStateEvents();
+        _autoplayListenersBound = true;
+    }
+
+    // Ocultar overlay inmediatamente para no bloquear UI
+    if (overlay) {
+        overlay.style.transition = 'opacity 0.4s ease';
+        overlay.style.opacity = '0';
+        setTimeout(() => overlay.remove(), 400);
+    }
+
+    startRadioStream();
+}
+
+// Función central para iniciar el stream de radio
+function startRadioStream() {
+    // Detener cualquier stream previo limpiamente
+    audioElement.pause();
+    audioElement.removeAttribute('src');
+
+    // Configurar audio
     audioElement.volume = 1.0;
     audioElement.muted = false;
     volumeSlider.value = 100;
-    audioElement.src = config.stream_radio;
-    audioElement.load();
+    currentPlayingType = 'radio';
 
-    audioElement.play()
-        .then(() => {
-            isAudioPlaying = true;
-            currentPlayingType = 'radio';
+    // Asignar fuente NUEVA con timestamp para evitar cache del navegador
+    const streamUrl = config.stream_radio + (config.stream_radio.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    audioElement.src = streamUrl;
+    // NO llamar load() — play() se encarga de iniciar la carga
 
-            // Bind eventos de estado solo una vez
-            if (!_autoplayListenersBound) {
-                bindAudioStateEvents();
-                _autoplayListenersBound = true;
-            }
-
-            updateAudioUI();
-
-            // Ocultar overlay con animación suave
-            if (overlay) {
-                overlay.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                overlay.style.opacity = '0';
-                overlay.style.transform = 'scale(1.05)';
-                setTimeout(() => overlay.remove(), 500);
-            }
-        })
-        .catch(err => {
-            console.log("Error al activar audio:", err);
-            // Incluso si falla, cerrar overlay para no bloquear la UI
-            if (overlay) overlay.remove();
-        });
+    const playPromise = audioElement.play();
+    if (playPromise !== undefined) {
+        playPromise
+            .then(() => {
+                isAudioPlaying = true;
+                updateAudioUI();
+                // Monitorear salud del stream
+                startStreamHealthCheck();
+            })
+            .catch(err => {
+                console.error("Error al reproducir:", err);
+                isAudioPlaying = false;
+                updateAudioUI();
+                // Mostrar botón de reintento
+                showRetryButton();
+            });
+    }
 }
+
+// Monitor de salud del stream: detecta si el audio está "playing" pero sin datos reales
+function startStreamHealthCheck() {
+    clearTimeout(_streamHealthTimer);
+    const checkTime = audioElement.currentTime;
+
+    _streamHealthTimer = setTimeout(() => {
+        if (!isAudioPlaying) return; // Ya no está activo
+
+        // Si currentTime no avanzó, el stream no está entregando datos → reintentar
+        if (audioElement.currentTime === checkTime || audioElement.paused) {
+            console.warn("Stream sin datos detectado, reintentando...");
+            startRadioStream(); // Reconectar automáticamente
+        } else {
+            // Está bien — verificar periódicamente
+            startStreamHealthCheck();
+        }
+    }, 4000); // verificar cada 4 segundos
+}
+
+function showRetryButton() {
+    const giantContainer = document.querySelector('.giant-play-container');
+    if (!giantContainer) return;
+    giantPlayBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i>';
+    giantPlayBtn.title = "Reintenter conexión";
+}
+
 
 
 // THEME MANAGEMENT
@@ -309,157 +355,43 @@ function bindAudioStateEvents() {
     });
 }
 
-// Autoplay helper for Radio
-let _autoplayListenersBound = false; // Evitar añadir listeners múltiples veces
-function initAutoplayRadio() {
-    // Garantizar volumen alto desde el inicio
-    audioElement.volume = 1.0;
-    volumeSlider.value = 100;
-
-    // Bind de eventos reales una sola vez
-    if (!_autoplayListenersBound) {
-        bindAudioStateEvents();
-        _autoplayListenersBound = true;
-    }
-
-    // Intentar reproducir con sonido
-    audioElement.src = config.stream_radio;
-    audioElement.volume = 1.0;
-    audioElement.muted = false;
-    audioElement.load();
-
-    audioElement.play()
-        .then(() => {
-            // ¡Funcionó con sonido! 
-            isAudioPlaying = true;
-            currentPlayingType = 'radio';
-            updateAudioUI();
-        })
-        .catch(() => {
-            // Bloqueado: reproducir en mudo y esperar primer clic del usuario
-            audioElement.muted = true;
-            audioElement.play()
-                .then(() => {
-                    isAudioPlaying = true;
-                    currentPlayingType = 'radio';
-                    updateAudioUI(); // Mostrará "TOCA PARA ACTIVAR SONIDO"
-
-                    // En la primera interacción real del usuario, iniciar con sonido
-                    const startWithSound = () => {
-                        // IMPORTANTE: NO hacer audioElement.muted = false aquí
-                        // Chrome pausaría el audio. En su lugar, hacer un play() fresco.
-                        audioElement.pause();
-                        audioElement.muted = false;
-                        audioElement.volume = 1.0;
-                        volumeSlider.value = 100;
-                        audioElement.src = config.stream_radio;
-                        audioElement.load();
-                        audioElement.play()
-                            .then(() => {
-                                isAudioPlaying = true;
-                                currentPlayingType = 'radio';
-                                updateAudioUI();
-                            })
-                            .catch(err => console.log("Play con sonido fallido:", err));
-
-                        // Remover todos los listeners de esta función
-                        document.removeEventListener('click',      startWithSound);
-                        document.removeEventListener('touchstart', startWithSound);
-                        document.removeEventListener('keydown',    startWithSound);
-                    };
-
-                    document.addEventListener('click',      startWithSound, { once: true });
-                    document.addEventListener('touchstart', startWithSound, { once: true });
-                    document.addEventListener('keydown',    startWithSound, { once: true });
-                })
-                .catch(err => {
-                    console.log("Autoplay muted también bloqueado:", err);
-                    isAudioPlaying = false;
-                    currentPlayingType = 'none';
-                    updateAudioUI();
-                });
-        });
-}
+// (initAutoplayRadio eliminado — reemplazado por activateAudio() + startRadioStream())
 
 function playRadioWeb() {
-    currentPlayingType = 'radio';
-    audioElement.src = config.stream_radio;
-    // Forzar volumen 100% siempre al iniciar el stream
-    audioElement.muted = false;
-    audioElement.volume = 1.0;
-    volumeSlider.value = 100;
-    audioElement.load();
-    audioElement.play()
-        .then(() => {
-            isAudioPlaying = true;
-            updateAudioUI();
-        })
-        .catch(e => {
-            console.log("playRadioWeb fallido:", e);
-            isAudioPlaying = false;
-            updateAudioUI();
-        });
+    startRadioStream();
 }
+
 
 
 // PLAY AUDIO / STREAMING (RADIO)
 function toggleLiveRadio() {
-    if (currentPlayingType === 'radio') {
-        if (isAudioPlaying) {
-            if (audioElement.muted) {
-                audioElement.muted = false;
-                audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
-                updateAudioUI();
-            } else {
-                audioElement.pause();
-                audioElement.src = ''; // Unload stream to avoid buffering outdated chunks
-                isAudioPlaying = false;
-                updateAudioUI();
-            }
-        } else {
-            audioElement.src = config.stream_radio;
-            audioElement.muted = false;
-            audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
-            audioElement.load(); // Request fresh buffer
-            audioElement.play().catch(e => console.log("Play failed: ", e));
-            isAudioPlaying = true;
-            updateAudioUI();
-        }
-    } else {
-        stopAudioPlayback();
-        currentPlayingType = 'radio';
-        
-        audioElement.src = config.stream_radio;
-        audioElement.muted = false;
-        audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
-        audioElement.load();
-        audioElement.play().catch(e => console.log("Play failed: ", e));
-        
-        isAudioPlaying = true;
+    clearTimeout(_streamHealthTimer);
+    if (currentPlayingType === 'radio' && isAudioPlaying) {
+        // Pausar radio
+        audioElement.pause();
+        audioElement.removeAttribute('src');
+        isAudioPlaying = false;
+        currentPlayingType = 'none';
         updateAudioUI();
+    } else {
+        // Iniciar/reiniciar radio
+        startRadioStream();
     }
 }
 
 function togglePlayState() {
+    clearTimeout(_streamHealthTimer);
     if (isAudioPlaying) {
-        if (audioElement.muted) {
-            audioElement.muted = false;
-            audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
-        } else {
-            audioElement.pause();
-            audioElement.src = ''; // Unload stream to prevent latency lag on resume
-            isAudioPlaying = false;
-        }
+        audioElement.pause();
+        audioElement.removeAttribute('src');
+        isAudioPlaying = false;
+        currentPlayingType = 'none';
+        updateAudioUI();
     } else {
-        audioElement.src = config.stream_radio;
-        audioElement.muted = false;
-        audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
-        audioElement.load(); // Force fresh fetch
-        audioElement.play().catch(e => console.log("Play failed: ", e));
-        isAudioPlaying = true;
+        startRadioStream();
     }
-    updateAudioUI();
 }
+
 
 function stopAudioPlayback() {
     audioElement.pause();

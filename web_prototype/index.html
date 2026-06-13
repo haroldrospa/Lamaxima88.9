@@ -324,8 +324,8 @@
     </div>
 </div> <!-- /app-container -->
 
-    <!-- AUDIO PLAYER ELEMENT -->
-    <video id="app-audio-element" style="display: none;"></video>
+    <!-- AUDIO PLAYER ELEMENT - usar <audio> para streams de audio Icecast -->
+    <audio id="app-audio-element" preload="none" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;"></audio>
 
     <script src="app.js"></script>
 </body>
