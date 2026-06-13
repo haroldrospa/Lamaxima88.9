@@ -244,10 +244,18 @@ function switchHomeTab(isRadio) {
 
 // Autoplay helper for Radio
 function initAutoplayRadio() {
+    // Garantizar volumen alto desde el inicio
+    audioElement.volume = 1.0;
+    volumeSlider.value = 100;
+
     playRadioWeb();
     
     // Unmute or start audio on first interaction
     const unmuteOnInteraction = () => {
+        // Garantizar volumen al hacer unmute
+        audioElement.volume = 1.0;
+        volumeSlider.value = 100;
+
         if (isAudioPlaying && audioElement.muted) {
             audioElement.muted = false;
             updateAudioUI();
@@ -268,10 +276,12 @@ function initAutoplayRadio() {
 function playRadioWeb() {
     currentPlayingType = 'radio';
     audioElement.src = config.stream_radio;
-    audioElement.volume = volumeSlider.value / 100;
+    // Forzar volumen 100% siempre al iniciar el stream
+    audioElement.volume = 1.0;
+    volumeSlider.value = 100;
     audioElement.load();
     
-    // Try unmuted first
+    // Intentar sin mute primero
     audioElement.muted = false;
     audioElement.play()
         .then(() => {
@@ -279,8 +289,9 @@ function playRadioWeb() {
             updateAudioUI();
         })
         .catch(e => {
-            console.log("Autoplay unmuted blocked, trying muted:", e);
-            // Fallback: play muted (always allowed by browsers)
+            console.log("Autoplay sin mute bloqueado, intentando muted:", e);
+            // Fallback: reproducir muted (permitido siempre por los navegadores)
+            // El usuario escuchará en cuanto haga clic (unmuteOnInteraction)
             audioElement.muted = true;
             audioElement.play()
                 .then(() => {
@@ -288,7 +299,7 @@ function playRadioWeb() {
                     updateAudioUI();
                 })
                 .catch(err => {
-                    console.log("Muted autoplay also blocked:", err);
+                    console.log("Autoplay muted también bloqueado:", err);
                 });
         });
 }
@@ -299,6 +310,7 @@ function toggleLiveRadio() {
         if (isAudioPlaying) {
             if (audioElement.muted) {
                 audioElement.muted = false;
+                audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
                 updateAudioUI();
             } else {
                 audioElement.pause();
@@ -309,6 +321,7 @@ function toggleLiveRadio() {
         } else {
             audioElement.src = config.stream_radio;
             audioElement.muted = false;
+            audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
             audioElement.load(); // Request fresh buffer
             audioElement.play().catch(e => console.log("Play failed: ", e));
             isAudioPlaying = true;
@@ -320,7 +333,7 @@ function toggleLiveRadio() {
         
         audioElement.src = config.stream_radio;
         audioElement.muted = false;
-        audioElement.volume = volumeSlider.value / 100;
+        audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
         audioElement.load();
         audioElement.play().catch(e => console.log("Play failed: ", e));
         
@@ -333,6 +346,7 @@ function togglePlayState() {
     if (isAudioPlaying) {
         if (audioElement.muted) {
             audioElement.muted = false;
+            audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
         } else {
             audioElement.pause();
             audioElement.src = ''; // Unload stream to prevent latency lag on resume
@@ -341,6 +355,7 @@ function togglePlayState() {
     } else {
         audioElement.src = config.stream_radio;
         audioElement.muted = false;
+        audioElement.volume = Math.max(volumeSlider.value / 100, 0.8);
         audioElement.load(); // Force fresh fetch
         audioElement.play().catch(e => console.log("Play failed: ", e));
         isAudioPlaying = true;
