@@ -87,17 +87,12 @@ function applyIOSFixes() {
     if (!isIOSSafari) return;
 
     // En iOS, el volumen de audio/video es controlado por el sistema, no por JS.
-    // Ocultamos los sliders de volumen para evitar confusión.
+    // Ocultamos los sliders de volumen para evitar confusión, manteniendo el botón de mute.
     const radioVolumeContainer = document.querySelector('.volume-slider-container');
     if (radioVolumeContainer) radioVolumeContainer.style.display = 'none';
 
-    const videoVolumeContainer = document.querySelector('.video-volume-container');
-    if (videoVolumeContainer) videoVolumeContainer.style.display = 'none';
-
-    // En iPhone, el botón de pantalla completa nativo del video ya aparece automáticamente
-    // en la barra de controles del sistema. Ocultamos el nuestro para evitar duplicados.
-    const pipBtn = document.getElementById('video-pip-btn');
-    if (pipBtn) pipBtn.style.display = 'none';
+    const videoVolumeSlider = document.getElementById('video-volume');
+    if (videoVolumeSlider) videoVolumeSlider.style.display = 'none';
 
     console.log('iOS Safari detectado — ajustes aplicados.');
 }
