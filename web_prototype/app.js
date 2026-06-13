@@ -279,6 +279,12 @@ let hlsInstance = null;
 
 function playLiveTv() {
     isTvPlaying = true;
+    
+    // Explicitly set inline playback attributes for iOS Safari
+    videoElement.setAttribute('playsinline', 'true');
+    videoElement.setAttribute('webkit-playsinline', 'true');
+    videoElement.playsInline = true;
+
     if (Hls.isSupported()) {
         if (!hlsInstance) {
             hlsInstance = new Hls({
@@ -303,6 +309,7 @@ function playLiveTv() {
         }
     } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
         videoElement.src = config.stream_tv;
+        videoElement.load(); // Call load() to apply the source in Safari properly
         videoElement.play().catch(e => console.log("Play failed: ", e));
     }
 }
