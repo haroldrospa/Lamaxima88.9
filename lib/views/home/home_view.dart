@@ -464,7 +464,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                         ),
                         const SizedBox(height: 4),
                         const Text(
-                          'La Máxima TV HD',
+                          'MÁXIMA TV',
                           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                       ],
