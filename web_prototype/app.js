@@ -2,9 +2,9 @@
 let config = {
     stream_radio: "https://streaming.lamaximafm.com:8000/stream", // Streaming de audio público continuo
     stream_tv: "https://streaming.lamaximafm.com:2020/hls/lamaximatv/lamaximatv.m3u8", // Streaming HLS de prueba
-    facebook: "https://facebook.com/lamaxima885",
-    instagram: "https://instagram.com/lamaxima885",
-    youtube: "https://youtube.com/lamaxima885",
+    facebook: "https://www.facebook.com/share/18qKUQ9LT2/?mibextid=wwXIfr",
+    instagram: "https://www.instagram.com/lamaxima88.9?igsh=MXRtZWlwampkdHFsYw==",
+    youtube: "https://www.youtube.com/@lamaxima88",
     tiktok: "https://tiktok.com/@lamaxima885",
     twitter: "https://twitter.com/lamaxima885"
 };

@@ -91,9 +91,9 @@ VALUES (
     1, 
     'https://streaming.lamaximafm.com:8000/stream', -- URL Streaming oficial por defecto
     'https://streaming.lamaximafm.com:2020/hls/lamaximatv/lamaximatv.m3u8', -- URL Live TV HLS oficial por defecto
-    'https://facebook.com/lamaxima885',
-    'https://instagram.com/lamaxima885',
-    'https://youtube.com/lamaxima885',
+    'https://www.facebook.com/share/18qKUQ9LT2/?mibextid=wwXIfr',
+    'https://www.instagram.com/lamaxima88.9?igsh=MXRtZWlwampkdHFsYw==',
+    'https://www.youtube.com/@lamaxima88',
     'https://tiktok.com/@lamaxima885',
     'https://twitter.com/lamaxima885'
 ) ON CONFLICT (id) DO NOTHING;
