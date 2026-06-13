@@ -1415,3 +1415,14 @@ hr {
     }
 }
 
+/* SPACER FOR MINI-PLAYER */
+.mini-player-spacer {
+    display: none;
+    height: 100px;
+    width: 100%;
+}
+
+.has-mini-player .mini-player-spacer {
+    display: block;
+}
+
