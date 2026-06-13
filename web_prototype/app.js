@@ -234,19 +234,21 @@ function switchHomeTab(isRadio) {
 
 // Autoplay helper for Radio
 function initAutoplayRadio() {
-    // Attempt autoplay immediately
     playRadioWeb();
     
-    // Fallback if blocked: start play on first user interaction
-    const startOnInteraction = () => {
-        if (!isAudioPlaying) {
+    // Unmute or start audio on first interaction
+    const unmuteOnInteraction = () => {
+        if (isAudioPlaying && audioElement.muted) {
+            audioElement.muted = false;
+            updateAudioUI();
+        } else if (!isAudioPlaying) {
             playRadioWeb();
         }
-        document.removeEventListener('click', startOnInteraction);
-        document.removeEventListener('touchstart', startOnInteraction);
+        document.removeEventListener('click', unmuteOnInteraction);
+        document.removeEventListener('touchstart', unmuteOnInteraction);
     };
-    document.addEventListener('click', startOnInteraction);
-    document.addEventListener('touchstart', startOnInteraction);
+    document.addEventListener('click', unmuteOnInteraction);
+    document.addEventListener('touchstart', unmuteOnInteraction);
 }
 
 function playRadioWeb() {
@@ -254,13 +256,26 @@ function playRadioWeb() {
     audioElement.src = config.stream_radio;
     audioElement.volume = volumeSlider.value / 100;
     audioElement.load();
+    
+    // Try unmuted first
+    audioElement.muted = false;
     audioElement.play()
         .then(() => {
             isAudioPlaying = true;
             updateAudioUI();
         })
         .catch(e => {
-            console.log("Autoplay was prevented, waiting for interaction: ", e);
+            console.log("Autoplay unmuted blocked, trying muted:", e);
+            // Fallback: play muted (always allowed by browsers)
+            audioElement.muted = true;
+            audioElement.play()
+                .then(() => {
+                    isAudioPlaying = true;
+                    updateAudioUI();
+                })
+                .catch(err => {
+                    console.log("Muted autoplay also blocked:", err);
+                });
         });
 }
 
@@ -268,21 +283,29 @@ function playRadioWeb() {
 function toggleLiveRadio() {
     if (currentPlayingType === 'radio') {
         if (isAudioPlaying) {
-            audioElement.pause();
-            audioElement.src = ''; // Unload stream to avoid buffering outdated chunks
-            isAudioPlaying = false;
+            if (audioElement.muted) {
+                audioElement.muted = false;
+                updateAudioUI();
+            } else {
+                audioElement.pause();
+                audioElement.src = ''; // Unload stream to avoid buffering outdated chunks
+                isAudioPlaying = false;
+                updateAudioUI();
+            }
         } else {
             audioElement.src = config.stream_radio;
+            audioElement.muted = false;
             audioElement.load(); // Request fresh buffer
             audioElement.play().catch(e => console.log("Play failed: ", e));
             isAudioPlaying = true;
+            updateAudioUI();
         }
-        updateAudioUI();
     } else {
         stopAudioPlayback();
         currentPlayingType = 'radio';
         
         audioElement.src = config.stream_radio;
+        audioElement.muted = false;
         audioElement.volume = volumeSlider.value / 100;
         audioElement.load();
         audioElement.play().catch(e => console.log("Play failed: ", e));
@@ -294,11 +317,16 @@ function toggleLiveRadio() {
 
 function togglePlayState() {
     if (isAudioPlaying) {
-        audioElement.pause();
-        audioElement.src = ''; // Unload stream to prevent latency lag on resume
-        isAudioPlaying = false;
+        if (audioElement.muted) {
+            audioElement.muted = false;
+        } else {
+            audioElement.pause();
+            audioElement.src = ''; // Unload stream to prevent latency lag on resume
+            isAudioPlaying = false;
+        }
     } else {
         audioElement.src = config.stream_radio;
+        audioElement.muted = false;
         audioElement.load(); // Force fresh fetch
         audioElement.play().catch(e => console.log("Play failed: ", e));
         isAudioPlaying = true;
@@ -309,6 +337,7 @@ function togglePlayState() {
 function stopAudioPlayback() {
     audioElement.pause();
     audioElement.src = '';
+    audioElement.muted = false;
     isAudioPlaying = false;
     currentPlayingType = 'none';
     updateAudioUI();
@@ -373,7 +402,11 @@ function updateAudioUI() {
         radioWaves.classList.add('playing');
         vinylDisc.classList.add('playing');
         giantPlayBtn.innerHTML = '<i class="fa-solid fa-circle-pause"></i>';
-        statusText.innerText = 'ESCUCHANDO AHORA';
+        if (audioElement.muted) {
+            statusText.innerText = 'TOCA PARA ACTIVAR SONIDO';
+        } else {
+            statusText.innerText = 'ESCUCHANDO AHORA';
+        }
         statusText.style.color = 'var(--gold)';
     } else {
         radioWaves.classList.remove('playing');
