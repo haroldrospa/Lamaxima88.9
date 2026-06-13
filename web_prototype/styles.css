@@ -1023,14 +1023,35 @@ hr {
         padding: 20px 24px 40px 24px;
     }
 
+    .segment-selector {
+        max-width: 750px;
+        margin: 0 auto 24px auto;
+    }
+
     .main-grid-container {
         display: flex;
         flex-direction: column;
         align-items: center;
-        max-width: 550px;
+        max-width: 750px;
         margin: 0 auto;
         gap: 30px;
         width: 100%;
+    }
+
+    /* Escalamiento de tamaño del vinilo para desktop */
+    .vinyl-container {
+        height: 270px;
+        margin-bottom: 20px;
+    }
+
+    .vinyl-disc {
+        width: 250px;
+        height: 250px;
+    }
+
+    .vinyl-center {
+        width: 90px !important;
+        height: 90px !important;
     }
 
     .player-column {
