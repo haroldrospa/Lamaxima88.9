@@ -246,9 +246,13 @@ function initAutoplayRadio() {
         }
         document.removeEventListener('click', unmuteOnInteraction);
         document.removeEventListener('touchstart', unmuteOnInteraction);
+        document.removeEventListener('mousedown', unmuteOnInteraction);
+        document.removeEventListener('keydown', unmuteOnInteraction);
     };
     document.addEventListener('click', unmuteOnInteraction);
     document.addEventListener('touchstart', unmuteOnInteraction);
+    document.addEventListener('mousedown', unmuteOnInteraction);
+    document.addEventListener('keydown', unmuteOnInteraction);
 }
 
 function playRadioWeb() {
