@@ -1,3 +1,8 @@
+// FORMAT HELPER — must be declared first before any code uses it
+String.prototype.padLeft = function(length, char) {
+    return this.length >= length ? this : (char.repeat(length - this.length) + this);
+};
+
 // MOCK DATABASE STOCKS (Simula Supabase)
 let config = {
     stream_radio: "https://streaming.lamaximafm.com:8000/stream", // Streaming de audio público continuo
@@ -55,13 +60,15 @@ const vinylDisc = document.getElementById('vinyl-disc');
 const giantPlayBtn = document.getElementById('giant-play-btn');
 const volumeSlider = document.getElementById('radio-volume-slider');
 
-// ON LOAD INITIALIZATION (Runs immediately for instant playback)
-initTheme();
-renderAllViews();
-setupListeners();
-initWeeklySchedule();
-initVideoControls();
-initAutoplayRadio();
+// ON LOAD INITIALIZATION — wrapped in DOMContentLoaded for safety
+document.addEventListener('DOMContentLoaded', function() {
+    initTheme();
+    renderAllViews();
+    setupListeners();
+    initWeeklySchedule();
+    initVideoControls();
+    initAutoplayRadio();
+});
 
 // THEME MANAGEMENT
 function initTheme() {
@@ -76,7 +83,7 @@ function initTheme() {
     }
 }
 
-document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+// Theme toggle listener is set up inside setupListeners()
 
 function toggleTheme() {
     const isDark = document.body.classList.contains('dark-mode');
@@ -167,16 +174,21 @@ function renderHome() {
     if (yt) yt.href = config.youtube || '#';
 }
 
-// FORMAT HELPER
-String.prototype.padLeft = function(length, char) {
-    return this.length >= length ? this : (char.repeat(length - this.length) + this);
-};
+// (padLeft is defined at the top of this file)
 
 // ACTIONS LISTENERS
 function setupListeners() {
     // Tab Segment switching (Radio vs TV)
     document.getElementById('seg-radio-btn').addEventListener('click', () => switchHomeTab(true));
     document.getElementById('seg-tv-btn').addEventListener('click', () => switchHomeTab(false));
+
+    // Theme toggle
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+    // Close modal when clicking overlay background
+    document.getElementById('modal-container').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-container') closeModal();
+    });
 
     // Radio Volume Control
     volumeSlider.addEventListener('input', (e) => {
@@ -672,12 +684,7 @@ function handleConfigSave(e) {
     hideAdminDashboard();
 }
 
-// CLOSE MODAL ON OVERLAY CLICK
-document.getElementById('modal-container').addEventListener('click', (e) => {
-    if (e.target.id === 'modal-container') {
-        closeModal();
-    }
-});
+// CLOSE MODAL ON OVERLAY CLICK — registered inside setupListeners()
 
 // WEEKLY SCHEDULE MANAGEMENT
 const weeklySchedule = {
