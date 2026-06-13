@@ -60,6 +60,7 @@ const vinylDisc = document.getElementById('vinyl-disc');
 const giantPlayBtn = document.getElementById('giant-play-btn');
 const volumeSlider = document.getElementById('radio-volume-slider');
 
+
 // ON LOAD INITIALIZATION — wrapped in DOMContentLoaded for safety
 document.addEventListener('DOMContentLoaded', function() {
     initTheme();
@@ -67,8 +68,50 @@ document.addEventListener('DOMContentLoaded', function() {
     setupListeners();
     initWeeklySchedule();
     initVideoControls();
-    initAutoplayRadio();
+    // NO intentar autoplay aquí — el overlay pedirá interacción al usuario
+    // y activateAudio() se llamará con un gesto real del usuario
 });
+
+// ACTIVACIÓN DE AUDIO (llamada desde el overlay)
+// Al ser llamada desde un onclick real, el navegador SIEMPRE permite el sonido
+function activateAudio() {
+    const overlay = document.getElementById('audio-activation-overlay');
+    
+    // Iniciar radio con volumen completo (el navegador permite porque hay interacción real)
+    audioElement.volume = 1.0;
+    audioElement.muted = false;
+    volumeSlider.value = 100;
+    audioElement.src = config.stream_radio;
+    audioElement.load();
+
+    audioElement.play()
+        .then(() => {
+            isAudioPlaying = true;
+            currentPlayingType = 'radio';
+
+            // Bind eventos de estado solo una vez
+            if (!_autoplayListenersBound) {
+                bindAudioStateEvents();
+                _autoplayListenersBound = true;
+            }
+
+            updateAudioUI();
+
+            // Ocultar overlay con animación suave
+            if (overlay) {
+                overlay.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                overlay.style.opacity = '0';
+                overlay.style.transform = 'scale(1.05)';
+                setTimeout(() => overlay.remove(), 500);
+            }
+        })
+        .catch(err => {
+            console.log("Error al activar audio:", err);
+            // Incluso si falla, cerrar overlay para no bloquear la UI
+            if (overlay) overlay.remove();
+        });
+}
+
 
 // THEME MANAGEMENT
 function initTheme() {
