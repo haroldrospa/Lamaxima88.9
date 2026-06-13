@@ -246,7 +246,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                                ),
                                const SizedBox(width: 8),
                                Text(
-                                 'CABINA EN VIVO',
+                                 'TELEVISIÓN EN VIVO',
                                  style: TextStyle(
                                    color: !_isRadioTab ? Colors.white : Colors.grey,
                                    fontWeight: FontWeight.bold,
@@ -414,7 +414,7 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                             _LiveIndicator(),
                             SizedBox(width: 6),
                             Text(
-                              'TRANSMISIÓN EN VIVO',
+                              'TELEVISIÓN EN VIVO',
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.gold, letterSpacing: 2),
                             ),
                           ],
