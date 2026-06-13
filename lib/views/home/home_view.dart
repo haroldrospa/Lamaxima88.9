@@ -451,11 +451,6 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                                   onPressed: () => _launchUrl(config.facebook),
                                 ),
                                 _buildSocialButton(
-                                  icon: Icons.close,
-                                  color: Colors.black,
-                                  onPressed: () => _launchUrl(config.twitter),
-                                ),
-                                _buildSocialButton(
                                   icon: Icons.music_note,
                                   color: Colors.black,
                                   onPressed: () => _launchUrl(config.tiktok),

@@ -5,8 +5,7 @@ let config = {
     facebook: "https://www.facebook.com/share/18qKUQ9LT2/?mibextid=wwXIfr",
     instagram: "https://www.instagram.com/lamaxima88.9?igsh=MXRtZWlwampkdHFsYw==",
     youtube: "https://www.youtube.com/@lamaxima88",
-    tiktok: "https://tiktok.com/@lamaxima885",
-    twitter: "https://twitter.com/lamaxima885"
+    tiktok: "https://www.tiktok.com/@lamaxima889fm?_r=1&_t=ZS-97AO2ZUs2FN"
 };
 
 let programas = [

@@ -94,8 +94,8 @@ VALUES (
     'https://www.facebook.com/share/18qKUQ9LT2/?mibextid=wwXIfr',
     'https://www.instagram.com/lamaxima88.9?igsh=MXRtZWlwampkdHFsYw==',
     'https://www.youtube.com/@lamaxima88',
-    'https://tiktok.com/@lamaxima885',
-    'https://twitter.com/lamaxima885'
+    'https://www.tiktok.com/@lamaxima889fm?_r=1&_t=ZS-97AO2ZUs2FN',
+    NULL
 ) ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE public.configuracion ENABLE ROW LEVEL SECURITY;
