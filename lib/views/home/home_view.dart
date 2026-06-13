@@ -34,6 +34,20 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
+    
+    // Reproducir la radio de inmediato con la URL por defecto para evitar esperas de red
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+        if (!audioProvider.isPlaying) {
+          audioProvider.playRadio(
+            'https://streaming.lamaximafm.com:8000/stream', 
+            'LA MÁXIMA 88.9 FM'
+          );
+        }
+      }
+    });
+
     _refreshData();
     
     // Autoplay radio al iniciar la app (una vez que los datos de configuración estén listos)
@@ -43,20 +57,18 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
         final programas = data['programas'] as List<Programa>?;
         if (config != null) {
           final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-          if (!audioProvider.isPlaying) {
-            Programa? programaAlAire;
-            if (programas != null) {
-              for (final prog in programas) {
-                if (prog.isOnAirNow()) {
-                  programaAlAire = prog;
-                  break;
-                }
+          Programa? programaAlAire;
+          if (programas != null) {
+            for (final prog in programas) {
+              if (prog.isOnAirNow()) {
+                programaAlAire = prog;
+                break;
               }
             }
-            final name = programaAlAire?.nombre ?? 'Música Continuada';
-            final img = programaAlAire?.imagen;
-            audioProvider.playRadio(config.streamRadio, name, imageUrl: img);
           }
+          final name = programaAlAire?.nombre ?? 'LA MÁXIMA 88.9 FM';
+          final img = programaAlAire?.imagen;
+          audioProvider.playRadio(config.streamRadio, name, imageUrl: img);
         }
       }
     }).catchError((e) {

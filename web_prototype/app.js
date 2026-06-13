@@ -56,14 +56,12 @@ const giantPlayBtn = document.getElementById('giant-play-btn');
 const volumeSlider = document.getElementById('radio-volume-slider');
 
 // ON LOAD INITIALIZATION
-document.addEventListener('DOMContentLoaded', () => {
-    initTheme();
-    renderAllViews();
-    setupListeners();
-    initWeeklySchedule();
-    initVideoControls();
-    initAutoplayRadio();
-});
+initTheme();
+renderAllViews();
+setupListeners();
+initWeeklySchedule();
+initVideoControls();
+initAutoplayRadio();
 
 // THEME MANAGEMENT
 function initTheme() {
