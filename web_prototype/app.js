@@ -49,6 +49,7 @@ let editingItemId = null;
 let isTvPlaying = false;
 let _autoplayListenersBound = false; // Evitar añadir event listeners múltiples veces
 let _streamHealthTimer = null;
+let sessionInteracted = false; // Indica si el usuario ya interactuó en esta sesión o si ya intentó reproducir
 
 // HTML Elements
 const audioElement = document.getElementById('app-audio-element');
@@ -110,14 +111,26 @@ function autoplayOnLoad() {
         _autoplayListenersBound = true;
     }
 
-    // En iOS, el autoplay de audio siempre requiere gesto del usuario.
-    // Mostramos directamente el banner en vez de intentar y fallar.
-    if (isIOSSafari) {
+    // Si ya interactuó en esta sesión, no hacemos nada más
+    if (sessionInteracted) {
+        return;
+    }
+
+    // Comprobamos si el usuario ya nos dio permiso anteriormente
+    const previouslyAllowed = localStorage.getItem('audio_autoplay_allowed') === 'true';
+
+    // En iOS Safari el autoplay siempre se bloquea en la carga inicial de página,
+    // pero si ya interactuó previamente, podemos intentar reproducir primero.
+    // Si falla, mostramos el banner.
+    if (isIOSSafari && !previouslyAllowed) {
         currentPlayingType = 'none';
         isAudioPlaying = false;
         updateAudioUI();
         const banner = document.getElementById('autoplay-blocked-banner');
-        if (banner) banner.style.display = 'flex';
+        if (banner) {
+            banner.innerHTML = '<i class="fa-solid fa-play"></i> <span>TOCA PARA ESCUCHAR LA RADIO</span>';
+            banner.classList.remove('hidden');
+        }
         return;
     }
 
@@ -137,15 +150,23 @@ function autoplayOnLoad() {
                 updateAudioUI();
                 startStreamHealthCheck();
                 const banner = document.getElementById('autoplay-blocked-banner');
-                if (banner) banner.style.display = 'none';
+                if (banner) banner.classList.add('hidden');
+                sessionInteracted = true;
             })
             .catch(err => {
                 console.warn('Autoplay bloqueado por el navegador:', err.message);
                 isAudioPlaying = false;
                 currentPlayingType = 'none';
                 updateAudioUI();
+                
+                // Si ya interactuó en esta sesión, no volvemos a mostrar el banner
+                if (sessionInteracted) return;
+
                 const banner = document.getElementById('autoplay-blocked-banner');
-                if (banner) banner.style.display = 'flex';
+                if (banner) {
+                    banner.innerHTML = '<i class="fa-solid fa-play"></i> <span>TOCA PARA ESCUCHAR LA RADIO</span>';
+                    banner.classList.remove('hidden');
+                }
             });
     }
 }
@@ -163,7 +184,10 @@ function activateAudio() {
     }
 
     // Ocultar banner
-    if (banner) banner.style.display = 'none';
+    if (banner) banner.classList.add('hidden');
+
+    sessionInteracted = true;
+    localStorage.setItem('audio_autoplay_allowed', 'true');
 
     // play() SÍNCRONO dentro del gesto del usuario — iOS y Chrome lo aceptan
     currentPlayingType = 'radio';
@@ -188,12 +212,11 @@ function activateAudio() {
                 isAudioPlaying = false;
                 currentPlayingType = 'none';
                 updateAudioUI();
-                // Si falla en iOS, mostrar mensaje más claro
-                if (isIOSSafari) {
-                    if (banner) {
-                        banner.innerHTML = '<i class="fa-solid fa-rotate-right"></i> TOCA PARA REINTENTAR';
-                        banner.style.display = 'flex';
-                    }
+                
+                // Si falla en el primer toque, permitimos un reintento
+                if (banner) {
+                    banner.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span>TOCA PARA REINTENTAR</span>';
+                    banner.classList.remove('hidden');
                 }
             });
     }
@@ -203,6 +226,15 @@ function activateAudio() {
 // Función para iniciar/reiniciar el stream de radio (puede ser async — ya tenemos permiso)
 function startRadioStream() {
     clearTimeout(_streamHealthTimer);
+    
+    // Ocultar banner ya que el usuario interactuó manualmente
+    sessionInteracted = true;
+    localStorage.setItem('audio_autoplay_allowed', 'true');
+    const banner = document.getElementById('autoplay-blocked-banner');
+    if (banner) {
+        banner.classList.add('hidden');
+    }
+
     currentPlayingType = 'radio';
     if (!isIOSSafari) {
         audioElement.volume = 1.0;

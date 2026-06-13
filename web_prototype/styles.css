@@ -1311,3 +1311,98 @@ hr {
     height: 4px;
     cursor: pointer;
 }
+
+/* BANNER DE AUTOPLAY (TOCA PARA ESCUCHAR) - DISEÑO MEJORADO Y FLOTANTE */
+.autoplay-toast {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    right: 16px;
+    z-index: 9999;
+    
+    /* Degradado dorado premium con glassmorphism */
+    background: linear-gradient(135deg, rgba(234, 157, 30, 0.9), rgba(240, 192, 96, 0.95));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    
+    color: #1a0a00;
+    font-family: 'Outfit', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding: 16px 24px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    
+    /* Sombra premium difuminada */
+    box-shadow: 0 10px 30px rgba(234, 157, 30, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+    
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    
+    /* Transición de entrada y salida */
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+    animation: toast-pulse-glow 2s infinite, toast-slide-up 0.4s ease-out;
+}
+
+.autoplay-toast i {
+    font-size: 16px;
+    animation: icon-bounce 1s infinite alternate;
+}
+
+.autoplay-toast:hover {
+    transform: scale(1.02);
+    background: linear-gradient(135deg, rgba(234, 157, 30, 0.95), rgba(240, 192, 96, 1));
+}
+
+.autoplay-toast:active {
+    transform: scale(0.98);
+}
+
+/* En pantallas grandes (PC), limitamos el ancho de la pastilla flotante y la centramos */
+@media (min-width: 500px) {
+    .autoplay-toast {
+        bottom: 30px;
+        left: 30px;
+        right: 30px;
+        border-radius: 50px;
+        padding: 14px 28px;
+    }
+}
+
+/* Animaciones */
+@keyframes toast-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toast-pulse-glow {
+    0%, 100% {
+        box-shadow: 0 10px 25px rgba(234, 157, 30, 0.25);
+    }
+    50% {
+        box-shadow: 0 10px 35px rgba(234, 157, 30, 0.45);
+    }
+}
+
+@keyframes icon-bounce {
+    from {
+        transform: scale(0.9) translateX(0);
+    }
+    to {
+        transform: scale(1.15) translateX(2px);
+    }
+}
+

@@ -20,43 +20,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="light-mode">
-    <!-- AUTOPLAY BLOCKED BANNER — visible cuando el navegador bloquea el autoplay (siempre en iOS) -->
-    <div id="autoplay-blocked-banner" style="
-        display: none; position: fixed; bottom: 0; left: 0; right: 0;
-        z-index: 9999; background: linear-gradient(135deg, #D4A742, #f0c060);
-        color: #1a0a00; font-family: 'Outfit', sans-serif; font-size: 17px;
-        font-weight: 700; letter-spacing: 1px;
-        padding: 20px 24px env(safe-area-inset-bottom, 20px);
-        box-shadow: 0 -4px 30px rgba(212,167,66,0.5);
-        cursor: pointer; user-select: none;
-        align-items: center; justify-content: center; gap: 12px;
-        -webkit-tap-highlight-color: transparent;
-    " onclick="activateAudio()">
-        <i class="fa-solid fa-play" style="font-size:20px;"></i>
-        <span>TOCA PARA ESCUCHAR LA RADIO</span>
-    </div>
-    <style>
-        #autoplay-blocked-banner {
-            animation: banner-pulse 1.8s ease-in-out infinite;
-        }
-        @keyframes banner-pulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.85; }
-        }
-        /* En pantallas grandes (desktop), limitamos el ancho del banner */
-        @media (min-width: 600px) {
-            #autoplay-blocked-banner {
-                bottom: 80px;
-                left: 50%;
-                right: auto;
-                transform: translateX(-50%);
-                border-radius: 50px;
-                padding: 14px 40px;
-                white-space: nowrap;
-                width: auto;
-            }
-        }
-    </style>
+
 
     <div class="app-container">
         <!-- HEADER -->
@@ -316,6 +280,11 @@
                 </form>
             </div>
         </div>
+    </div>
+    <!-- BANNER DE AUTOPLAY (TOCA PARA ESCUCHAR) -->
+    <div id="autoplay-blocked-banner" class="autoplay-toast hidden" onclick="activateAudio()">
+        <i class="fa-solid fa-play"></i>
+        <span>TOCA PARA ESCUCHAR LA RADIO</span>
     </div>
 </div> <!-- /app-container -->
 
