@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupListeners();
     initWeeklySchedule();
     initVideoControls();
+    initAutoplayRadio();
 });
 
 // THEME MANAGEMENT
@@ -217,6 +218,7 @@ function switchHomeTab(isRadio) {
         tvPanel.classList.add('hidden');
         
         pauseLiveTv();
+        playRadioWeb();
     } else {
         radioBtn.classList.remove('active');
         tvBtn.classList.add('active');
@@ -224,12 +226,42 @@ function switchHomeTab(isRadio) {
         tvPanel.classList.remove('hidden');
         
         // Pausar radio para evitar sonidos mezclados
-        if (isAudioPlaying) {
-            togglePlayState();
-        }
+        stopAudioPlayback();
         
         playLiveTv();
     }
+}
+
+// Autoplay helper for Radio
+function initAutoplayRadio() {
+    // Attempt autoplay immediately
+    playRadioWeb();
+    
+    // Fallback if blocked: start play on first user interaction
+    const startOnInteraction = () => {
+        if (!isAudioPlaying) {
+            playRadioWeb();
+        }
+        document.removeEventListener('click', startOnInteraction);
+        document.removeEventListener('touchstart', startOnInteraction);
+    };
+    document.addEventListener('click', startOnInteraction);
+    document.addEventListener('touchstart', startOnInteraction);
+}
+
+function playRadioWeb() {
+    currentPlayingType = 'radio';
+    audioElement.src = config.stream_radio;
+    audioElement.volume = volumeSlider.value / 100;
+    audioElement.load();
+    audioElement.play()
+        .then(() => {
+            isAudioPlaying = true;
+            updateAudioUI();
+        })
+        .catch(e => {
+            console.log("Autoplay was prevented, waiting for interaction: ", e);
+        });
 }
 
 // PLAY AUDIO / STREAMING (RADIO)

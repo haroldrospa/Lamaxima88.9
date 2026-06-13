@@ -36,6 +36,33 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
     super.initState();
     _refreshData();
     
+    // Autoplay radio al iniciar la app (una vez que los datos de configuración estén listos)
+    _homeDataFuture.then((data) {
+      if (mounted) {
+        final config = data['config'] as Configuracion?;
+        final programas = data['programas'] as List<Programa>?;
+        if (config != null) {
+          final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+          if (!audioProvider.isPlaying) {
+            Programa? programaAlAire;
+            if (programas != null) {
+              for (final prog in programas) {
+                if (prog.isOnAirNow()) {
+                  programaAlAire = prog;
+                  break;
+                }
+              }
+            }
+            final name = programaAlAire?.nombre ?? 'Música Continuada';
+            final img = programaAlAire?.imagen;
+            audioProvider.playRadio(config.streamRadio, name, imageUrl: img);
+          }
+        }
+      }
+    }).catchError((e) {
+      print('Error en autoplay: $e');
+    });
+
     // Controlador de animación para rotar la carátula en reproducción de radio
     _rotationController = AnimationController(
       vsync: this,
@@ -197,7 +224,14 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                     // Tab Radio
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _isRadioTab = true),
+                        onTap: () {
+                          setState(() => _isRadioTab = true);
+                          if (!audioProvider.isPlaying) {
+                            final name = programaAlAire?.nombre ?? 'Música Continuada';
+                            final img = programaAlAire?.imagen;
+                            audioProvider.playRadio(config.streamRadio, name, imageUrl: img);
+                          }
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             color: _isRadioTab ? AppTheme.gold : Colors.transparent,
@@ -229,7 +263,12 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                     // Tab TV
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => setState(() => _isRadioTab = false),
+                        onTap: () {
+                          setState(() => _isRadioTab = false);
+                          if (audioProvider.isPlaying) {
+                            audioProvider.stop();
+                          }
+                        },
                         child: Container(
                           decoration: BoxDecoration(
                             color: !_isRadioTab ? AppTheme.gold : Colors.transparent,
@@ -361,9 +400,13 @@ class _HomeViewState extends State<HomeView> with SingleTickerProviderStateMixin
                           iconSize: 90,
                           color: AppTheme.gold,
                           onPressed: () {
-                            final name = programaAlAire?.nombre ?? 'Música Continuada';
-                            final img = programaAlAire?.imagen;
-                            audioProvider.playRadio(config.streamRadio, name, imageUrl: img);
+                            if (isRadioPlaying) {
+                              audioProvider.pause();
+                            } else {
+                              final name = programaAlAire?.nombre ?? 'Música Continuada';
+                              final img = programaAlAire?.imagen;
+                              audioProvider.playRadio(config.streamRadio, name, imageUrl: img);
+                            }
                           },
                         ),
                         
