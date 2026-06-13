@@ -137,14 +137,12 @@ function autoplayOnLoad() {
     currentPlayingType = 'radio';
     audioElement.src = config.stream_radio;
     if (!isIOSSafari) audioElement.volume = 1.0;
-    audioElement.muted = true; // Muted primero para evitar bloqueo de autoplay en Chrome
+    audioElement.muted = false; // Intentar unmuted directamente (muted+unmuted bloquea audio en Chrome)
 
     const playPromise = audioElement.play();
     if (playPromise !== undefined) {
         playPromise
             .then(() => {
-                // Reproduciendo con mute — desmutear inmediatamente
-                audioElement.muted = false;
                 if (volumeSlider && !isIOSSafari) volumeSlider.value = 100;
                 isAudioPlaying = true;
                 updateAudioUI();
