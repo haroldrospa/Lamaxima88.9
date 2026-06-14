@@ -3,9 +3,19 @@ String.prototype.padLeft = function(length, char) {
     return this.length >= length ? this : (char.repeat(length - this.length) + this);
 };
 
+// Formatea la URL para Shoutcast agregando punto y coma si no lo tiene para forzar el flujo de audio crudo en HTML5
+function getFormattedRadioUrl(url) {
+    if (!url) return '';
+    let formatted = url.trim();
+    if (formatted.includes(':8000') && !formatted.endsWith(';')) {
+        formatted = formatted.endsWith('/') ? formatted + ';' : formatted + '/;';
+    }
+    return formatted;
+}
+
 // MOCK DATABASE STOCKS (Simula Supabase)
 let config = {
-    stream_radio: "https://streaming.lamaximafm.com:8000/stream", // Streaming de audio público continuo
+    stream_radio: "https://streaming.lamaximafm.com:8000/stream;", // Streaming de audio público continuo (con ; para Shoutcast)
     stream_tv: "https://streaming.lamaximafm.com:2020/hls/lamaximatv/lamaximatv.m3u8", // Streaming HLS de prueba
     facebook: "https://www.facebook.com/share/18qKUQ9LT2/?mibextid=wwXIfr",
     instagram: "https://www.instagram.com/lamaxima88.9?igsh=MXRtZWlwampkdHFsYw==",
@@ -133,7 +143,8 @@ function autoplayOnLoad() {
     }
 
     currentPlayingType = 'radio';
-    audioElement.src = config.stream_radio;
+    audioElement.src = getFormattedRadioUrl(config.stream_radio);
+    audioElement.load(); // Forzar recarga del stream antes de play
     if (!isIOSSafari) audioElement.volume = 1.0;
     audioElement.muted = false; // Intentar unmuted directamente (muted+unmuted bloquea audio en Chrome)
 
@@ -196,7 +207,8 @@ function activateAudio() {
         if (volumeSlider) volumeSlider.value = 100;
     }
     audioElement.muted = false;
-    audioElement.src = config.stream_radio;
+    audioElement.src = getFormattedRadioUrl(config.stream_radio);
+    audioElement.load(); // Forzar recarga del stream antes de play
 
     const playPromise = audioElement.play();
     if (playPromise !== undefined) {
@@ -270,7 +282,8 @@ function startRadioStream() {
     }
     audioElement.muted = false;
     // URL limpia sin cache-busting — Icecast puede rechazar query params
-    audioElement.src = config.stream_radio;
+    audioElement.src = getFormattedRadioUrl(config.stream_radio);
+    audioElement.load(); // Forzar recarga del stream antes de play
 
     const playPromise = audioElement.play();
     if (playPromise !== undefined) {
@@ -305,7 +318,7 @@ function startStreamHealthCheck() {
             // Está bien — verificar periódicamente
             startStreamHealthCheck();
         }
-    }, 4000); // verificar cada 4 segundos
+    }, 8000); // verificar cada 8 segundos (dar margen para buffering)
 }
 
 function showRetryButton() {
